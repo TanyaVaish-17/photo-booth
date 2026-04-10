@@ -366,7 +366,7 @@ export default function Home() {
             <span role="img" aria-label="love">
               💖
             </span>{" "}
-            by Your Team
+            by Tanya
           </p>
         </footer>
       </div>
