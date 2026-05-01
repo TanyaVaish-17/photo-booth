@@ -9,7 +9,7 @@ const FILTER_MAP = {
   "Retro":         "sepia(0.35) contrast(1.1) saturate(0.85) brightness(0.95)",
 };
 
-// Sticker positions as fractions — mirrors STICKER_POS_FRAC in PhotoFrame
+// Legacy auto-placement positions (used when stickerPlacements is empty)
 const STICKER_POS_FRAC = [
   { top: 0.014, left: 0.021, rotate: 15,  sizeFrac: 0.16 },
   { top: 0.014, left: 0.80,  rotate: -12, sizeFrac: 0.16 },
@@ -61,7 +61,13 @@ async function drawPhoto(ctx, src, x, y, w, h, radius = 4) {
   }
 }
 
-export default function DownloadButton({ capturedImages=[], layout="vertical", frame, filter, stickers=[] }) {
+export default function DownloadButton({
+  capturedImages = [],
+  layout = "vertical",
+  frame,
+  filter,
+  stickerPlacements = [],   // drag-and-drop positions [{emoji, x, y, size, rotate}]
+}) {
   const [loading, setLoading] = useState(false);
 
   const handleDownload = async () => {
@@ -73,7 +79,6 @@ export default function DownloadButton({ capturedImages=[], layout="vertical", f
 
     try {
       const SCALE = 2;
-      // Use the same dims as PhotoFrame so the download matches the preview exactly
       const dims  = LAYOUT_DIMS[layout] || LAYOUT_DIMS.vertical;
       const CW    = dims.w * SCALE;
       const CH    = dims.h * SCALE;
@@ -86,11 +91,11 @@ export default function DownloadButton({ capturedImages=[], layout="vertical", f
       canvas.width = CW; canvas.height = CH;
       const ctx = canvas.getContext("2d");
 
-      // Background
+      // ── Background ──
       ctx.fillStyle = "#18122B";
       ctx.fillRect(0, 0, CW, CH);
 
-      // Photos with filter
+      // ── Photos with filter ──
       const cssFilter = FILTER_MAP[filter] || null;
       if (cssFilter) ctx.filter = cssFilter;
 
@@ -105,10 +110,9 @@ export default function DownloadButton({ capturedImages=[], layout="vertical", f
         const y   = cPAD + row * (cellH + cGAP);
         await drawPhoto(ctx, capturedImages[i], x, y, cellW, cellH, 4 * SCALE);
       }
-
       ctx.filter = "none";
 
-      // Frame overlay
+      // ── Frame overlay ──
       const frameKey = frame?.startsWith("frame") ? frame : "frame1";
       if (SVG_FRAMES[frameKey]) {
         try {
@@ -118,30 +122,29 @@ export default function DownloadButton({ capturedImages=[], layout="vertical", f
         } catch (e) { console.warn("Frame skipped:", e); }
       }
 
-      // Emoji stickers
-      for (let i = 0; i < stickers.length; i++) {
+      // ── Stickers: drag-and-drop placements from Preview tab ──
+      for (const s of stickerPlacements) {
         try {
-          const p    = STICKER_POS_FRAC[i % STICKER_POS_FRAC.length];
-          const size = Math.round(p.sizeFrac * Math.min(CW, CH));
-          const x    = Math.round(p.left * CW);
-          const y    = Math.round(p.top  * CH);
-          const url  = emojiToDataUrl(stickers[i], size * 2);
+          const size = Math.round(s.size * SCALE);
+          const x    = Math.round(s.x    * SCALE);
+          const y    = Math.round(s.y    * SCALE);
+          const url  = emojiToDataUrl(s.emoji, size * 2);
           const img  = await loadImage(url);
           ctx.save();
           ctx.translate(x + size / 2, y + size / 2);
-          ctx.rotate((p.rotate * Math.PI) / 180);
-          ctx.drawImage(img, -size/2, -size/2, size, size);
+          ctx.rotate(((s.rotate || 0) * Math.PI) / 180);
+          ctx.drawImage(img, -size / 2, -size / 2, size, size);
           ctx.restore();
         } catch { /* skip */ }
       }
 
-      // Watermark
+      // ── Watermark ──
       ctx.font = `bold ${Math.round(CW * 0.035)}px sans-serif`;
       ctx.fillStyle = "rgba(249,168,212,0.6)";
       ctx.textAlign = "right";
       ctx.fillText("K-Click Booth 💖", CW - cPAD, CH - cPAD);
 
-      // Download
+      // ── Trigger download ──
       const link = document.createElement("a");
       link.download = `k-click-booth-${Date.now()}.png`;
       link.href = canvas.toDataURL("image/png");
@@ -156,11 +159,13 @@ export default function DownloadButton({ capturedImages=[], layout="vertical", f
   };
 
   return (
-    <button onClick={handleDownload}
+    <button
+      onClick={handleDownload}
       disabled={loading || capturedImages.length === 0}
-      className={`mt-2 bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-300 ${
+      className={`bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-300 ${
         loading || capturedImages.length === 0 ? "opacity-50 cursor-not-allowed" : "hover:scale-105"
-      }`}>
+      }`}
+    >
       {loading ? "⏳ Preparing…" : "Download Strip 🎞️"}
     </button>
   );

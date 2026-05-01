@@ -8,24 +8,21 @@ export const filterStyleMap = {
   "Retro":         "sepia(0.35) contrast(1.1) saturate(0.85) brightness(0.95)",
 };
 
-// ─── Canvas dimensions per layout ────────────────────────────────────────────
-
 export const LAYOUT_DIMS = {
-  vertical:   { w: 280, h: 420 },   // portrait  — 4 rows × 1 col
-  vertical3:  { w: 280, h: 380 },   // portrait  — 3 rows × 1 col
-  vertical4:  { w: 280, h: 420 },   // portrait  — 4 rows × 1 col
-  collage:    { w: 280, h: 280 },   // SQUARE    — 2×2 equal grid
-  horizontal: { w: 380, h: 220 },   // LANDSCAPE — 1 row × 2 col
-  square2:    { w: 380, h: 220 },   // LANDSCAPE — same as horizontal
-  strip3:     { w: 280, h: 380 },   // portrait  — 3 rows × 1 col
+  vertical:   { w: 280, h: 420 },
+  vertical3:  { w: 280, h: 380 },
+  vertical4:  { w: 280, h: 420 },
+  collage:    { w: 280, h: 280 },
+  horizontal: { w: 380, h: 220 },
+  square2:    { w: 380, h: 220 },
+  strip3:     { w: 280, h: 380 },
 };
 
-// ─── Grid config ──────────────────────────────────────────────────────────────
 export const layoutConfig = {
   vertical:   { rows: 4, cols: 1, count: 4 },
   vertical3:  { rows: 3, cols: 1, count: 3 },
   vertical4:  { rows: 4, cols: 1, count: 4 },
-  collage:    { rows: 2, cols: 2, count: 4 },   
+  collage:    { rows: 2, cols: 2, count: 4 },
   horizontal: { rows: 1, cols: 2, count: 2 },
   square2:    { rows: 1, cols: 2, count: 2 },
   strip3:     { rows: 3, cols: 1, count: 3 },
@@ -34,13 +31,13 @@ export const layoutConfig = {
 const PAD = 8;
 const GAP = 4;
 
+// ─── SVG Frames ───────────────────────────────────────────────────────────────
 export const SVG_FRAMES = {
   frame1: (w, h) => `
     <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
       <rect x="4" y="4" width="${w-8}" height="${h-8}" rx="12" ry="12"
             fill="none" stroke="white" stroke-width="16"/>
-      <rect x="4" y="${h-48}" width="${w-8}" height="44"
-            fill="white" opacity="0.88"/>
+      <rect x="4" y="${h-48}" width="${w-8}" height="44" fill="white" opacity="0.88"/>
       <text x="14"     y="20" font-size="16">🤍</text>
       <text x="${w-30}" y="20" font-size="16">🤍</text>
       <text x="14"     y="${h-6}" font-size="16">🤍</text>
@@ -154,16 +151,6 @@ function makeStickerDataUrl(emoji, size = 80) {
 
 export function getStickerUrl(emoji) { return makeStickerDataUrl(emoji, 80); }
 
-// Sticker positions as fractions of frame W/H
-const STICKER_POS_FRAC = [
-  { top: 0.014, left: 0.021, rotate: "15deg",  sizeFrac: 0.16 },
-  { top: 0.014, left: 0.80,  rotate: "-12deg", sizeFrac: 0.16 },
-  { top: 0.44,  left: 0.82,  rotate: "8deg",   sizeFrac: 0.14 },
-  { top: 0.85,  left: 0.021, rotate: "-8deg",  sizeFrac: 0.16 },
-  { top: 0.81,  left: 0.75,  rotate: "18deg",  sizeFrac: 0.14 },
-  { top: 0.43,  left: 0.014, rotate: "-5deg",  sizeFrac: 0.13 },
-];
-
 function PhotoCell({ src, index, x, y, w, h }) {
   return (
     <div style={{
@@ -180,7 +167,16 @@ function PhotoCell({ src, index, x, y, w, h }) {
   );
 }
 
-export default function PhotoFrame({ layout="vertical", frame, stickers=[], filter, images=[] }) {
+// ─── PhotoFrame — accepts stickerPlacements for drag-and-drop positions ───────
+// stickerPlacements: Array of { emoji, x, y, size, rotate } in pixels
+// stickers (legacy):  Array of emoji strings → auto-placed at corners
+export default function PhotoFrame({
+  layout = "vertical",
+  frame,
+  stickerPlacements = [],   // [{emoji, x, y, size, rotate}]
+  filter,
+  images = [],
+}) {
   const dims = LAYOUT_DIMS[layout] || LAYOUT_DIMS.vertical;
   const cfg  = layoutConfig[layout]  || layoutConfig.vertical;
   const FW   = dims.w;
@@ -194,6 +190,18 @@ export default function PhotoFrame({ layout="vertical", frame, stickers=[], filt
 
   const cellW = (IW - GAP * (cfg.cols - 1)) / cfg.cols;
   const cellH = (IH - GAP * (cfg.rows - 1)) / cfg.rows;
+
+  // Decide which sticker system to use:
+  // if stickerPlacements provided → use those (drag-and-drop mode)
+  // else fall back to legacy auto-position from stickers[]
+  const STICKER_POS_FRAC = [
+    { top: 0.014, left: 0.021, rotate: "15deg",  sizeFrac: 0.16 },
+    { top: 0.014, left: 0.80,  rotate: "-12deg", sizeFrac: 0.16 },
+    { top: 0.44,  left: 0.82,  rotate: "8deg",   sizeFrac: 0.14 },
+    { top: 0.85,  left: 0.021, rotate: "-8deg",  sizeFrac: 0.16 },
+    { top: 0.81,  left: 0.75,  rotate: "18deg",  sizeFrac: 0.14 },
+    { top: 0.43,  left: 0.014, rotate: "-5deg",  sizeFrac: 0.13 },
+  ];
 
   return (
     <div style={{
@@ -225,22 +233,18 @@ export default function PhotoFrame({ layout="vertical", frame, stickers=[], filt
         }} />
       )}
 
-      {/* LAYER 3 — Stickers */}
-      {stickers.map((sticker, i) => {
-        const p    = STICKER_POS_FRAC[i % STICKER_POS_FRAC.length];
-        const size = Math.round(p.sizeFrac * Math.min(FW, FH));
-        const src  = sticker.startsWith("data:") || sticker.startsWith("/") || sticker.startsWith("http")
-          ? sticker : makeStickerDataUrl(sticker, 80);
+      {/* LAYER 3 — Drag-and-drop placed stickers */}
+      {stickerPlacements.map((s, i) => {
+        const src = makeStickerDataUrl(s.emoji, 80);
         return (
-          <img key={i} src={src} alt="" style={{
+          <img key={"placed-"+i} src={src} alt="" style={{
             position:"absolute",
-            top:  Math.round(p.top  * FH),
-            left: Math.round(p.left * FW),
-            width: size, height: size,
+            left: s.x, top: s.y,
+            width: s.size, height: s.size,
             objectFit:"contain",
-            transform:`rotate(${p.rotate})`,
+            transform:"rotate("+(s.rotate||0)+"deg)",
             pointerEvents:"none", zIndex:3,
-            background:"transparent", border:"none", boxShadow:"none",
+            background:"transparent",
           }} />
         );
       })}
