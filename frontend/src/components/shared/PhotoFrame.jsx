@@ -9,7 +9,7 @@ export const filterStyleMap = {
 };
 
 // ─── Canvas dimensions per layout ────────────────────────────────────────────
-// Each layout has its own W×H so photos are never cut
+
 export const LAYOUT_DIMS = {
   vertical:   { w: 280, h: 420 },   // portrait  — 4 rows × 1 col
   vertical3:  { w: 280, h: 380 },   // portrait  — 3 rows × 1 col
@@ -25,7 +25,7 @@ export const layoutConfig = {
   vertical:   { rows: 4, cols: 1, count: 4 },
   vertical3:  { rows: 3, cols: 1, count: 3 },
   vertical4:  { rows: 4, cols: 1, count: 4 },
-  collage:    { rows: 2, cols: 2, count: 4 },   // 4 equal squares
+  collage:    { rows: 2, cols: 2, count: 4 },   
   horizontal: { rows: 1, cols: 2, count: 2 },
   square2:    { rows: 1, cols: 2, count: 2 },
   strip3:     { rows: 3, cols: 1, count: 3 },
@@ -34,7 +34,6 @@ export const layoutConfig = {
 const PAD = 8;
 const GAP = 4;
 
-// ─── SVG Frames — each accepts (w, h) so they scale to any layout ────────────
 export const SVG_FRAMES = {
   frame1: (w, h) => `
     <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">

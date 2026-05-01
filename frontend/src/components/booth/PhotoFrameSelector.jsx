@@ -1,5 +1,5 @@
 import React from "react";
-import { SVG_FRAMES } from "./PhotoFrame";
+import { SVG_FRAMES } from "../shared/PhotoFrame";
 
 // Helper to turn SVG string → data URL for preview thumbnails
 function svgToDataUrl(svgStr) {

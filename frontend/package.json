@@ -12,6 +12,7 @@
   "dependencies": {
     "@radix-ui/react-tabs": "^1.1.12",
     "clsx": "^2.1.1",
+    "firebase": "^12.12.1",
     "lucide-react": "^0.526.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

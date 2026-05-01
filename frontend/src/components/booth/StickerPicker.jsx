@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { SVG_STICKER_PACKS } from "./PhotoFrame";
+import { SVG_STICKER_PACKS } from "../shared/PhotoFrame";
 
 export default function StickerPicker({ selectedStickers, setSelectedStickers }) {
   const [activePack, setActivePack] = useState("hearts");
