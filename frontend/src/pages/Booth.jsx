@@ -10,7 +10,6 @@ import PhotoFrameSelector from "../components/booth/PhotoFrameSelector";
 import StickerPicker from "../components/booth/StickerPicker";
 import TemplateGallery from "../components/booth/TemplateGallery";
 import PhotoFrame from "../components/shared/PhotoFrame";
-import DownloadButton from "../components/shared/DownloadButton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import "../styles/animations.css";
 
@@ -83,7 +82,6 @@ export default function Booth() {
         setCapturedImages([...shots]);
       }
     }
-
     setIsCapturing(false);
     setActiveTab("preview");
   };
@@ -95,6 +93,26 @@ export default function Booth() {
     setSelectedStickers(template.stickers || []);
     setSelectedFilter(template.filter || null);
     setCapturedImages([]);
+  };
+
+  const handleRetake = () => {
+    setCapturedImages([]);
+    captureResolveRef.current = null;
+    setCountdownActive(false);
+    setIsCapturing(false);
+    setActiveTab("camera");
+  };
+
+  const handleContinueToResult = () => {
+    navigate("/result", {
+      state: {
+        images:   capturedImages,
+        layout:   activeLayout,
+        frame:    activeFrame,
+        filter:   activeFilter,
+        stickers: activeStickers,
+      },
+    });
   };
 
   useEffect(() => {
@@ -119,13 +137,35 @@ export default function Booth() {
           Let's Click Some K-Cute Moments! 💕
         </h2>
 
+        {/* Progress Steps */}
+        <div className="flex items-center justify-center gap-2 mb-10 text-sm font-semibold">
+          {[
+            { key: "custom",  label: "1. Customize" },
+            { key: "camera",  label: "2. Camera" },
+            { key: "preview", label: "3. Preview" },
+          ].map(({ key, label }, i, arr) => (
+            <React.Fragment key={key}>
+              <span className={`px-4 py-1.5 rounded-full transition-all duration-300 ${
+                activeTab === key
+                  ? "bg-pink-500 text-white shadow-md"
+                  : capturedImages.length > 0 && key === "preview"
+                    ? "bg-pink-200 text-pink-700"
+                    : "bg-white/60 text-pink-400"
+              }`}>
+                {label}
+              </span>
+              {i < arr.length - 1 && <span className="text-pink-300">→</span>}
+            </React.Fragment>
+          ))}
+        </div>
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-7xl mx-auto">
           <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto mb-8">
             <TabsTrigger value="custom">🎨 Customize</TabsTrigger>
             <TabsTrigger value="quick">⚡ Quick Templates</TabsTrigger>
           </TabsList>
 
-          {/* Customize */}
+          {/* ── Customize ── */}
           <TabsContent value="custom">
             <div style={{ display: "flex", gap: 24, alignItems: "flex-start", maxWidth: 1100, margin: "0 auto" }}>
               <div style={{ flex: "1 1 0", minWidth: 0, maxWidth: 780 }}>
@@ -146,13 +186,13 @@ export default function Booth() {
                     <button onClick={() => setActiveTab("camera")}
                       disabled={!selectedLayout || !selectedFrame}
                       className="px-6 py-2 rounded-full bg-pink-500 text-white hover:bg-pink-600 transition disabled:opacity-40 disabled:cursor-not-allowed">
-                      Next →
+                      Next → Camera 📸
                     </button>
                   </div>
                 </div>
               </div>
 
-              {/* Live Preview */}
+              {/* Live Preview Panel */}
               <div style={{
                 width: 280, flexShrink: 0, position: "sticky", top: 96,
                 alignSelf: "flex-start", background: "rgba(255,255,255,0.9)",
@@ -179,17 +219,17 @@ export default function Booth() {
             </div>
           </TabsContent>
 
-          {/* Quick Templates */}
+          {/* ── Quick Templates ── */}
           <TabsContent value="quick" className="max-w-5xl mx-auto flex flex-col items-center gap-6">
             <TemplateGallery onSelect={handleTemplateSelect} selectedTemplate={selectedTemplate} />
             <button onClick={() => setActiveTab("camera")}
               disabled={!selectedTemplate}
               className="mt-6 px-6 py-2 rounded-full bg-pink-500 text-white hover:bg-pink-600 transition disabled:opacity-40 disabled:cursor-not-allowed">
-              Next →
+              Next → Camera 📸
             </button>
           </TabsContent>
 
-          {/* Camera */}
+          {/* ── Camera ── */}
           <TabsContent value="camera" className="max-w-5xl mx-auto space-y-8">
             <Step title={`📸 Take ${frameCount} Photo${frameCount > 1 ? "s" : ""}`}>
               <div className="p-4 bg-white rounded-xl shadow-md max-w-xl mx-auto">
@@ -214,7 +254,9 @@ export default function Booth() {
             {capturedImages.length > 0 && (
               <div className="mt-6 p-4 rounded-xl bg-pink-50 shadow-lg">
                 <p className="text-pink-600 font-semibold mb-3">
-                  {capturedImages.length === frameCount ? "✅ All shots captured!" : `📷 ${capturedImages.length} / ${frameCount} captured…`}
+                  {capturedImages.length === frameCount
+                    ? "✅ All shots captured!"
+                    : `📷 ${capturedImages.length} / ${frameCount} captured…`}
                 </p>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {capturedImages.map((img, idx) => (
@@ -223,18 +265,14 @@ export default function Booth() {
                   ))}
                 </div>
                 {capturedImages.length === frameCount && !isCapturing && (
-                  <div className="mt-6 flex justify-center space-x-4">
-                    <button onClick={() => {
-                      setCapturedImages([]);
-                      captureResolveRef.current = null;
-                      setCountdownActive(false);
-                      setIsCapturing(false);
-                    }} className="bg-rose-500 hover:bg-rose-600 text-white font-bold py-2 px-6 rounded-full shadow-md transition">
+                  <div className="mt-6 flex justify-center gap-4">
+                    <button onClick={handleRetake}
+                      className="bg-rose-500 hover:bg-rose-600 text-white font-bold py-2 px-6 rounded-full shadow-md transition">
                       🔄 Retake
                     </button>
                     <button onClick={() => setActiveTab("preview")}
-                      className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full shadow-md transition">
-                      ➡ Preview
+                      className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-6 rounded-full shadow-md transition">
+                      👁️ Preview Strip
                     </button>
                   </div>
                 )}
@@ -242,30 +280,45 @@ export default function Booth() {
             )}
           </TabsContent>
 
-          {/* Preview */}
+          {/* ── Preview ── */}
           <TabsContent value="preview" className="max-w-5xl mx-auto space-y-8">
-            <Step title="🖼️ Preview Your Strip">
-              <div className="p-4 bg-white rounded-xl shadow-md max-w-xl mx-auto flex flex-col items-center">
-                <PhotoFrame layout={activeLayout} frame={activeFrame}
-                  filter={activeFilter} stickers={activeStickers} images={capturedImages} />
-                <div className="mt-6 flex justify-center flex-wrap gap-4">
-                  <button onClick={() => setActiveTab("camera")}
-                    className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-full shadow-md transition">
-                    ⬅ Retake
-                  </button>
-                  <DownloadButton capturedImages={capturedImages} layout={activeLayout}
-                    frame={activeFrame} filter={activeFilter} stickers={activeStickers} />
-                  <button onClick={() => navigate("/result", {
-                      state: { images: capturedImages, layout: activeLayout,
-                        frame: activeFrame, filter: activeFilter, stickers: activeStickers }
-                    })}
-                    className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-full shadow-md transition">
-                    ✅ Save & Result
-                  </button>
-                </div>
+            <div className="bg-white/80 rounded-3xl shadow-xl p-8 max-w-2xl mx-auto">
+
+              {/* Header */}
+              <div className="text-center mb-6">
+                <h3 className="text-2xl font-extrabold text-pink-700">🖼️ Preview Your Strip</h3>
+                <p className="text-pink-400 text-sm mt-1">
+                  Happy with how it looks? Continue to download & save — or retake if you want to redo it.
+                </p>
               </div>
-            </Step>
+
+              {/* Photo strip */}
+              <div className="flex justify-center mb-8">
+                <PhotoFrame
+                  layout={activeLayout} frame={activeFrame}
+                  filter={activeFilter} stickers={activeStickers}
+                  images={capturedImages}
+                />
+              </div>
+
+              {/* TWO clear actions only */}
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
+                <button onClick={handleRetake}
+                  className="flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-8 rounded-full shadow transition-all hover:scale-105 border border-gray-200">
+                  🔄 Retake Photos
+                </button>
+                <button onClick={handleContinueToResult}
+                  className="flex items-center justify-center gap-2 bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all hover:scale-105">
+                  Continue → 💖
+                </button>
+              </div>
+
+              <p className="text-center text-xs text-pink-300 mt-4">
+                You can download, share and save to your Memories Wall on the next screen
+              </p>
+            </div>
           </TabsContent>
+
         </Tabs>
       </section>
     </PageLayout>
