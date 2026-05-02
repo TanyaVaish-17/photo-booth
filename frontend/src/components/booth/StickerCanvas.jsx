@@ -37,14 +37,25 @@ function PhotoCell({ src, index, x, y, w, h }) {
   );
 }
 
-// StickerCanvas renders ONLY the sticker picker panel + draggable frame
-// The static preview frame is rendered separately in Booth.jsx on the left
-export default function StickerCanvas({ layout="vertical", frame, filter, images=[], placements, onPlacementsChange }) {
+// Shared state is lifted to Booth.jsx via placements/onPlacementsChange
+// stripOnly=true  → renders only the draggable frame canvas
+// pickerOnly=true → renders only the sticker picker + controls
+// neither         → renders both stacked (fallback)
+export default function StickerCanvas({
+  layout = "vertical", frame, filter, images = [],
+  placements, onPlacementsChange,
+  stripOnly = false, pickerOnly = false,
+  selectedId: externalSelectedId, onSelectId,
+}) {
+  // Local selected state — shared between strip and picker via props if needed
+  const [localSelectedId, setLocalSelectedId] = useState(null);
+  const selectedId   = externalSelectedId !== undefined ? externalSelectedId : localSelectedId;
+  const setSelectedId = onSelectId || setLocalSelectedId;
+
   const [activePack, setActivePack] = useState("hearts");
-  const [selectedId, setSelectedId] = useState(null);
   const [snapHint,   setSnapHint]   = useState(null);
-  const containerRef  = useRef(null);
-  const draggingRef   = useRef(null);
+  const containerRef = useRef(null);
+  const draggingRef  = useRef(null);
 
   const dims  = LAYOUT_DIMS[layout] || LAYOUT_DIMS.vertical;
   const cfg   = layoutConfig[layout]  || layoutConfig.vertical;
@@ -67,9 +78,9 @@ export default function StickerCanvas({ layout="vertical", frame, filter, images
     setSelectedId(newP.id);
   };
 
-  const removeSticker  = (id) => { onPlacementsChange(placements.filter(p => p.id !== id)); setSelectedId(null); };
-  const rotateSticker  = (id, d) => onPlacementsChange(placements.map(p => p.id===id ? {...p, rotate:(p.rotate||0)+d} : p));
-  const resizeSticker  = (id, d) => onPlacementsChange(placements.map(p => p.id===id ? {...p, size:Math.max(20,Math.min(120,(p.size||40)+d))} : p));
+  const removeSticker = (id) => { onPlacementsChange(placements.filter(p => p.id !== id)); setSelectedId(null); };
+  const rotateSticker = (id, d) => onPlacementsChange(placements.map(p => p.id===id ? {...p, rotate:(p.rotate||0)+d} : p));
+  const resizeSticker = (id, d) => onPlacementsChange(placements.map(p => p.id===id ? {...p, size:Math.max(20,Math.min(120,(p.size||40)+d))} : p));
 
   const trySnap = useCallback((x, y) => {
     for (const zone of SNAP_ZONES) {
@@ -107,22 +118,110 @@ export default function StickerCanvas({ layout="vertical", frame, filter, images
 
   const onPointerUp = useCallback(() => { draggingRef.current = null; setSnapHint(null); }, []);
 
-  return (
-    <div className="flex flex-col gap-4 w-full">
+  // ── Draggable strip canvas ──────────────────────────────────────────────────
+  const StripCanvas = (
+    <div className="flex flex-col items-center gap-2">
+      {snapHint && (
+        <p className="text-xs text-pink-500 font-semibold animate-pulse">📌 Snapping to {snapHint.replace("-", " ")}!</p>
+      )}
+      <div
+        ref={containerRef}
+        onClick={() => setSelectedId(null)}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerLeave={onPointerUp}
+        style={{
+          position:"relative", width:FW, height:FH, borderRadius:12, overflow:"hidden",
+          background:"#18122B", boxShadow:"0 8px 32px rgba(0,0,0,0.3)",
+          cursor:"default", userSelect:"none",
+          outline: snapHint ? "2px dashed #f472b6" : "none",
+        }}
+      >
+        {/* Photos */}
+        <div style={{ position:"absolute", top:PAD, left:PAD, width:IW, height:IH, zIndex:1, filter:filterValue, pointerEvents:"none" }}>
+          {Array.from({ length: cfg.count }, (_, i) => {
+            const col = i % cfg.cols, row = Math.floor(i / cfg.cols);
+            return <PhotoCell key={i} src={images[i]} index={i} x={col*(cellW+GAP)} y={row*(cellH+GAP)} w={cellW} h={cellH} />;
+          })}
+        </div>
+        {/* Frame */}
+        {frameSvg && (
+          <img src={frameSvg} alt="frame" style={{ position:"absolute", top:0, left:0, width:"100%", height:"100%", objectFit:"fill", pointerEvents:"none", zIndex:2 }} />
+        )}
+        {/* Draggable stickers */}
+        {placements.map((s) => (
+          <div key={s.id}
+            onPointerDown={(e) => onPointerDown(e, s.id)}
+            onClick={(e) => { e.stopPropagation(); setSelectedId(s.id); }}
+            style={{
+              position:"absolute", left:s.x, top:s.y, width:s.size, height:s.size,
+              cursor:"grab", zIndex: s.id===selectedId ? 10 : 3,
+              outline: s.id===selectedId ? "2px dashed #f472b6" : "none",
+              outlineOffset:2, borderRadius:4, touchAction:"none",
+            }}
+          >
+            <img src={makeStickerDataUrl(s.emoji, 80)} alt="" style={{
+              width:"100%", height:"100%", objectFit:"contain",
+              transform:`rotate(${s.rotate||0}deg)`, pointerEvents:"none", background:"transparent",
+            }} />
+          </div>
+        ))}
+        {/* Snap dots */}
+        {SNAP_ZONES.map((zone) => (
+          <div key={zone.name} style={{
+            position:"absolute", left:zone.x*FW+4, top:zone.y*FH+4, width:5, height:5,
+            borderRadius:"50%", background: snapHint===zone.name ? "#f472b6" : "rgba(244,114,182,0.2)",
+            pointerEvents:"none", zIndex:5, transition:"background 0.15s",
+          }} />
+        ))}
+      </div>
+      <p className="text-xs text-pink-300 text-center">Click sticker to select • Drag to move</p>
+    </div>
+  );
 
-      {/* ── Sticker picker panel ── */}
-      <div className="bg-white/90 rounded-2xl shadow-md p-4 border border-pink-100">
-        <p className="text-pink-600 font-semibold text-sm mb-3 text-center">
-          🎨 Pick a sticker — drag it on the strip!
-          {placements.length >= 8 && <span className="text-rose-400 ml-2">(max 8)</span>}
+  // ── Sticker picker + controls panel ────────────────────────────────────────
+  const PickerPanel = (
+    <div className="flex flex-col gap-4 w-full">
+      {/* Controls for selected sticker */}
+      {selectedId && (
+        <div className="flex items-center justify-center gap-2 bg-pink-50 rounded-2xl px-4 py-3 border border-pink-100">
+          <span className="text-xs text-pink-500 font-semibold mr-1">Selected:</span>
+          <button onClick={() => rotateSticker(selectedId, -15)} title="Rotate left"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-pink-200 text-pink-600 hover:bg-pink-100 transition">
+            <RotateCw size={14} className="scale-x-[-1]" />
+          </button>
+          <button onClick={() => rotateSticker(selectedId, 15)} title="Rotate right"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-pink-200 text-pink-600 hover:bg-pink-100 transition">
+            <RotateCw size={14} />
+          </button>
+          <button onClick={() => resizeSticker(selectedId, -8)} title="Shrink"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-pink-200 text-pink-600 hover:bg-pink-100 transition">
+            <ZoomOut size={14} />
+          </button>
+          <button onClick={() => resizeSticker(selectedId, 8)} title="Grow"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-pink-200 text-pink-600 hover:bg-pink-100 transition">
+            <ZoomIn size={14} />
+          </button>
+          <button onClick={() => removeSticker(selectedId)} title="Remove"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-red-50 border border-red-200 text-red-500 hover:bg-red-100 transition">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* Sticker picker */}
+      <div className="bg-white/90 rounded-2xl shadow-sm p-4 border border-pink-100">
+        <p className="text-pink-600 font-bold text-sm mb-3">
+          🎨 Add Stickers
+          <span className="text-pink-300 font-normal ml-2 text-xs">({placements.length}/8 used)</span>
         </p>
 
         {/* Pack tabs */}
-        <div className="flex flex-wrap gap-1.5 justify-center mb-3">
+        <div className="flex flex-wrap gap-1.5 mb-3">
           {Object.entries(SVG_STICKER_PACKS).map(([key, pack]) => (
             <button key={key} onClick={() => setActivePack(key)}
               className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
-                activePack === key ? "bg-pink-500 text-white" : "bg-pink-100 text-pink-600 hover:bg-pink-200"
+                activePack === key ? "bg-pink-500 text-white shadow-sm" : "bg-pink-100 text-pink-600 hover:bg-pink-200"
               }`}>
               {pack.name}
             </button>
@@ -130,110 +229,47 @@ export default function StickerCanvas({ layout="vertical", frame, filter, images
         </div>
 
         {/* Sticker grid */}
-        <div className="flex flex-wrap gap-2 justify-center">
+        <div style={{display:"grid", gridTemplateColumns:"repeat(8,1fr)", gap:4}}>
           {SVG_STICKER_PACKS[activePack].stickers.map(({ emoji }, idx) => (
             <button key={idx} onClick={() => addSticker(emoji)}
               disabled={placements.length >= 8}
-              className="w-11 h-11 text-2xl rounded-xl border-2 border-pink-200 bg-white hover:border-pink-400 hover:scale-110 transition-all disabled:opacity-40">
+              title={`Add ${emoji}`}
+              style={{width:"100%", aspectRatio:"1", fontSize:18, borderRadius:8, border:"2px solid #fce7f3", background:"white", cursor:"pointer", transition:"transform 0.1s"}}
+              onMouseEnter={e=>e.currentTarget.style.transform="scale(1.15)"}
+              onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>
               {emoji}
             </button>
           ))}
         </div>
       </div>
 
-      {/* ── Selected sticker controls ── */}
-      {selectedId && (
-        <div className="flex items-center justify-center gap-2 bg-white/90 rounded-full px-4 py-2 shadow border border-pink-100">
-          <span className="text-xs text-pink-500 font-semibold">Selected:</span>
-          <button onClick={() => rotateSticker(selectedId, -15)} title="Rotate left"
-            className="p-1.5 rounded-full bg-pink-100 hover:bg-pink-200 text-pink-600 transition">
-            <RotateCw size={13} className="scale-x-[-1]" />
-          </button>
-          <button onClick={() => rotateSticker(selectedId, 15)} title="Rotate right"
-            className="p-1.5 rounded-full bg-pink-100 hover:bg-pink-200 text-pink-600 transition">
-            <RotateCw size={13} />
-          </button>
-          <button onClick={() => resizeSticker(selectedId, -8)} title="Shrink"
-            className="p-1.5 rounded-full bg-pink-100 hover:bg-pink-200 text-pink-600 transition">
-            <ZoomOut size={13} />
-          </button>
-          <button onClick={() => resizeSticker(selectedId, 8)} title="Grow"
-            className="p-1.5 rounded-full bg-pink-100 hover:bg-pink-200 text-pink-600 transition">
-            <ZoomIn size={13} />
-          </button>
-          <button onClick={() => removeSticker(selectedId)} title="Remove"
-            className="p-1.5 rounded-full bg-red-100 hover:bg-red-200 text-red-500 transition">
-            <X size={13} />
-          </button>
-        </div>
-      )}
-
-      {snapHint && (
-        <p className="text-xs text-pink-500 font-semibold animate-pulse text-center">
-          📌 Snapping to {snapHint.replace("-", " ")}!
-        </p>
-      )}
-
-      {/* ── Draggable frame ── */}
-      <div className="flex flex-col items-center gap-2">
-        <p className="text-xs text-pink-400 font-medium">Drag stickers on the strip below 👇</p>
-        <div
-          ref={containerRef}
-          onClick={() => setSelectedId(null)}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerLeave={onPointerUp}
-          style={{
-            position:"relative", width:FW, height:FH, borderRadius:12, overflow:"hidden",
-            background:"#18122B", boxShadow:"0 8px 32px rgba(0,0,0,0.3)",
-            cursor:"default", userSelect:"none",
-            outline: snapHint ? "2px dashed #f472b6" : "none",
-          }}
-        >
-          {/* Photos */}
-          <div style={{ position:"absolute", top:PAD, left:PAD, width:IW, height:IH, zIndex:1, filter:filterValue, pointerEvents:"none" }}>
-            {Array.from({ length: cfg.count }, (_, i) => {
-              const col = i % cfg.cols, row = Math.floor(i / cfg.cols);
-              return <PhotoCell key={i} src={images[i]} index={i} x={col*(cellW+GAP)} y={row*(cellH+GAP)} w={cellW} h={cellH} />;
-            })}
+      {/* Placed stickers list */}
+      {placements.length > 0 && (
+        <div className="bg-white/90 rounded-2xl shadow-sm p-4 border border-pink-100">
+          <p className="text-pink-600 font-bold text-xs mb-2">📍 Placed stickers — click to select</p>
+          <div className="flex flex-wrap gap-2">
+            {placements.map((s) => (
+              <button key={s.id} onClick={() => setSelectedId(s.id)}
+                className={`w-10 h-10 text-xl rounded-xl border-2 transition-all ${
+                  s.id === selectedId ? "border-pink-500 bg-pink-50 scale-110 shadow-md" : "border-pink-200 bg-white hover:border-pink-300"
+                }`}>
+                {s.emoji}
+              </button>
+            ))}
           </div>
-
-          {/* Frame */}
-          {frameSvg && (
-            <img src={frameSvg} alt="frame" style={{ position:"absolute", top:0, left:0, width:"100%", height:"100%", objectFit:"fill", pointerEvents:"none", zIndex:2 }} />
-          )}
-
-          {/* Draggable stickers */}
-          {placements.map((s) => (
-            <div key={s.id}
-              onPointerDown={(e) => onPointerDown(e, s.id)}
-              onClick={(e) => { e.stopPropagation(); setSelectedId(s.id); }}
-              style={{
-                position:"absolute", left:s.x, top:s.y, width:s.size, height:s.size,
-                cursor:"grab", zIndex: s.id===selectedId ? 10 : 3,
-                outline: s.id===selectedId ? "2px dashed #f472b6" : "none",
-                outlineOffset:2, borderRadius:4, touchAction:"none",
-              }}
-            >
-              <img src={makeStickerDataUrl(s.emoji, 80)} alt="" style={{
-                width:"100%", height:"100%", objectFit:"contain",
-                transform:`rotate(${s.rotate||0}deg)`, pointerEvents:"none", background:"transparent",
-              }} />
-            </div>
-          ))}
-
-          {/* Snap dots */}
-          {SNAP_ZONES.map((zone) => (
-            <div key={zone.name} style={{
-              position:"absolute", left:zone.x*FW+4, top:zone.y*FH+4, width:5, height:5,
-              borderRadius:"50%", background: snapHint===zone.name ? "#f472b6" : "rgba(244,114,182,0.2)",
-              pointerEvents:"none", zIndex:5, transition:"background 0.15s",
-            }} />
-          ))}
         </div>
+      )}
+    </div>
+  );
 
-        <p className="text-xs text-pink-300 text-center">Click to select • Drag to move • Use controls above to edit</p>
-      </div>
+  if (stripOnly)  return StripCanvas;
+  if (pickerOnly) return PickerPanel;
+
+  // Fallback: both stacked
+  return (
+    <div className="flex flex-col gap-4 items-center">
+      {StripCanvas}
+      {PickerPanel}
     </div>
   );
 }

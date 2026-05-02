@@ -33,7 +33,10 @@ export default function Result() {
 
   const handleShare = async () => {
     if (navigator.share) {
-      try { await navigator.share({ title: "My K-Click Booth Strip 📸", text: "Check out my cute K-style photo strip! 💕", url: window.location.href }); setShared(true); } catch (_) {}
+      try {
+        await navigator.share({ title: "My K-Click Booth Strip 📸", text: "Check out my cute K-style photo strip! 💕", url: window.location.href });
+        setShared(true);
+      } catch (_) {}
     } else {
       await navigator.clipboard.writeText(window.location.href);
       setShared(true);
@@ -59,88 +62,89 @@ export default function Result() {
 
   return (
     <PageLayout>
-      <main className="max-w-5xl mx-auto py-12 px-4">
+      <main className="py-10 px-4" style={{maxWidth:900, margin:"0 auto"}}>
 
         {/* Header */}
         <div className="text-center mb-8">
-          <h2 className="text-4xl font-extrabold text-pink-700 drop-shadow-lg">🎉 Your K-Photo Strip!</h2>
+          <h2 className="text-3xl font-extrabold text-pink-700 drop-shadow-lg">🎉 Your K-Photo Strip!</h2>
           <p className="text-pink-400 mt-1 text-sm">Download, share or save to your Memories Wall 💕</p>
         </div>
 
-        {/* ── Side by side: strip LEFT, everything else RIGHT ── */}
-        <div className="flex flex-col lg:flex-row gap-6 items-start">
+        {/* Two column */}
+        <div style={{display:"flex", flexDirection:"row", gap:24, alignItems:"flex-start", flexWrap:"wrap", justifyContent:"center"}}>
 
-          {/* LEFT — Photo strip (fixed width, doesn't stretch) */}
-          <div className="bg-white/90 rounded-3xl shadow-2xl p-5 flex flex-col items-center gap-2 flex-shrink-0">
-            <p className="text-pink-400 font-semibold text-xs tracking-wide">🎞️ Your Strip</p>
-            <PhotoFrame layout={layout} frame={frame} filter={filter} stickerPlacements={stickerPlacements} images={images} />
+          {/* LEFT — photo strip */}
+          <div style={{flexShrink:0}} className="bg-white/90 rounded-3xl shadow-2xl p-5 flex flex-col items-center gap-2">
+            <p className="text-pink-400 font-semibold text-xs tracking-widest uppercase">Your Strip</p>
+            <PhotoFrame
+              layout={layout} frame={frame} filter={filter}
+              stickerPlacements={stickerPlacements} images={images}
+            />
           </div>
 
-          {/* RIGHT — Actions + shots stacked */}
-          <div className="flex flex-col gap-4 flex-1 min-w-0">
+          {/* RIGHT — compact action cards */}
+          <div style={{flex:"1 1 260px", minWidth:240, display:"flex", flexDirection:"column", gap:10}}>
 
-            {/* Action cards */}
-            <div className="bg-white/90 rounded-3xl shadow-xl p-5">
-              <h3 className="text-sm font-extrabold text-pink-700 mb-3">What would you like to do?</h3>
-              <div className="flex flex-col gap-2">
+            <p className="text-sm font-extrabold text-pink-700">What would you like to do?</p>
 
-                <ActionRow color="pink">
-                  <ActionInfo title="⬇️ Download" desc="Save as PNG to your device" />
-                  <DownloadButton capturedImages={images} layout={layout} frame={frame} filter={filter} stickerPlacements={stickerPlacements} />
-                </ActionRow>
+            {/* Download */}
+            <div className="flex items-center justify-between bg-pink-50 rounded-2xl px-4 py-3 border border-pink-100">
+              <div>
+                <p className="font-semibold text-pink-700 text-sm">⬇️ Download</p>
+                <p className="text-xs text-pink-300">Save as PNG to your device</p>
+              </div>
+              <DownloadButton
+                capturedImages={images} layout={layout} frame={frame}
+                filter={filter} stickerPlacements={stickerPlacements}
+              />
+            </div>
 
-                <ActionRow color="purple">
-                  <ActionInfo title="🔗 Share" desc={shared ? "Link copied! ✅" : "Share or copy link"} />
-                  <button onClick={handleShare}
-                    className="flex items-center gap-1.5 bg-purple-500 hover:bg-purple-600 text-white text-xs font-bold py-2 px-4 rounded-full shadow transition hover:scale-105 whitespace-nowrap">
-                    <Share2 size={12} /> Share
-                  </button>
-                </ActionRow>
+            {/* Share */}
+            <div className="flex items-center justify-between bg-purple-50 rounded-2xl px-4 py-3 border border-purple-100">
+              <div>
+                <p className="font-semibold text-purple-700 text-sm">🔗 Share</p>
+                <p className="text-xs text-purple-300">{shared ? "Link copied! ✅" : "Share or copy link"}</p>
+              </div>
+              <button onClick={handleShare}
+                className="flex items-center gap-1.5 bg-purple-500 hover:bg-purple-600 text-white text-xs font-bold py-1.5 px-4 rounded-full shadow transition hover:scale-105 whitespace-nowrap">
+                <Share2 size={12} /> Share
+              </button>
+            </div>
 
-                <ActionRow color="rose">
-                  <ActionInfo
-                    title="🌸 Save to Memories"
-                    desc={!user ? "Sign in to save" : saved ? "Saved! ✅" : "Add to your Memories Wall"}
-                  />
-                  {user ? (
-                    saved
-                      ? <Link to="/memories"><button className="bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-2 px-4 rounded-full shadow transition hover:scale-105 whitespace-nowrap">View 🌸</button></Link>
-                      : <button onClick={handleSaveMemory} disabled={saving}
-                          className="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold py-2 px-4 rounded-full shadow transition hover:scale-105 disabled:opacity-50 whitespace-nowrap">
-                          {saving ? "Saving…" : "Save 💾"}
-                        </button>
-                  ) : (
-                    <Link to="/auth"><button className="bg-rose-400 hover:bg-rose-500 text-white text-xs font-bold py-2 px-4 rounded-full shadow transition hover:scale-105 whitespace-nowrap">Sign In</button></Link>
-                  )}
-                </ActionRow>
-
-                {saveError && <p className="text-red-400 text-xs px-1">{saveError}</p>}
-
-                <ActionRow color="gray">
-                  <ActionInfo title="🔄 Start Over" desc="Fresh session at the booth" />
-                  <button onClick={() => navigate("/booth")}
-                    className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white text-xs font-bold py-2 px-4 rounded-full shadow transition hover:scale-105 whitespace-nowrap">
-                    <RefreshCw size={12} /> Restart
-                  </button>
-                </ActionRow>
-
+            {/* Save to Memories */}
+            <div className="flex items-center justify-between bg-rose-50 rounded-2xl px-4 py-3 border border-rose-100">
+              <div>
+                <p className="font-semibold text-rose-700 text-sm">🌸 Save to Memories</p>
+                <p className="text-xs text-rose-300">
+                  {!user ? "Sign in to save" : saved ? "Saved! ✅" : "Add to your Memories Wall"}
+                </p>
+              </div>
+              <div className="flex-shrink-0">
+                {user ? (
+                  saved
+                    ? <Link to="/memories"><button className="bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1.5 px-4 rounded-full shadow transition whitespace-nowrap">View 🌸</button></Link>
+                    : <button onClick={handleSaveMemory} disabled={saving}
+                        className="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold py-1.5 px-4 rounded-full shadow transition hover:scale-105 disabled:opacity-50 whitespace-nowrap">
+                        {saving ? "Saving…" : "Save 💾"}
+                      </button>
+                ) : (
+                  <Link to="/auth"><button className="bg-rose-400 hover:bg-rose-500 text-white text-xs font-bold py-1.5 px-4 rounded-full shadow transition whitespace-nowrap">Sign In</button></Link>
+                )}
               </div>
             </div>
 
-            {/* Individual shots */}
-            <div className="bg-white/90 rounded-3xl shadow-xl p-5">
-              <h3 className="text-sm font-extrabold text-pink-700 mb-3">📷 Individual Shots</h3>
-              <div className="grid grid-cols-2 gap-2">
-                {images.map((img, idx) => (
-                  <div key={idx} className="relative group">
-                    <img src={img} alt={`Photo ${idx+1}`}
-                      className="rounded-xl border-4 border-white shadow object-cover w-full aspect-video" />
-                    <span className="absolute bottom-1.5 left-1.5 bg-pink-500 text-white text-xs font-bold px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition">
-                      #{idx+1}
-                    </span>
-                  </div>
-                ))}
+            {saveError && <p className="text-red-400 text-xs px-1">{saveError}</p>}
+
+            {/* Restart */}
+            <div className="flex items-center justify-between bg-gray-50 rounded-2xl px-4 py-3 border border-gray-100">
+              <div>
+                <p className="font-semibold text-gray-600 text-sm">🔄 Start Over</p>
+                <p className="text-xs text-gray-400">Fresh session at the booth</p>
               </div>
+              <button onClick={() => navigate("/booth")}
+                className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white text-xs font-bold py-1.5 px-4 rounded-full shadow transition hover:scale-105 whitespace-nowrap">
+                <RefreshCw size={12} /> Restart
+              </button>
             </div>
 
           </div>
@@ -149,23 +153,3 @@ export default function Result() {
     </PageLayout>
   );
 }
-
-const colorMap = {
-  pink:   "bg-pink-50 border-pink-100",
-  purple: "bg-purple-50 border-purple-100",
-  rose:   "bg-rose-50 border-rose-100",
-  gray:   "bg-gray-50 border-gray-100",
-};
-
-const ActionRow = ({ color, children }) => (
-  <div className={`flex items-center justify-between gap-3 rounded-2xl px-4 py-2.5 border ${colorMap[color]}`}>
-    {children}
-  </div>
-);
-
-const ActionInfo = ({ title, desc }) => (
-  <div className="min-w-0">
-    <p className="font-semibold text-gray-700 text-xs">{title}</p>
-    <p className="text-xs text-gray-400 truncate">{desc}</p>
-  </div>
-);

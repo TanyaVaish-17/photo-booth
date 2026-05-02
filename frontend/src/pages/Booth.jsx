@@ -26,6 +26,7 @@ export default function Booth() {
   const [selectedTemplate, setSelectedTemplate]   = useState(null);
   const [selectedFilter, setSelectedFilter]       = useState(null);
   const [stickerPlacements, setStickerPlacements] = useState([]);
+  const [stickerSelectedId, setStickerSelectedId]   = useState(null);
   const videoRef = useRef(null);
 
   const [countdownActive, setCountdownActive] = useState(false);
@@ -113,7 +114,6 @@ export default function Booth() {
   return (
     <PageLayout>
       <section className="py-12 px-4 sm:px-6 min-h-screen">
-
         <h2 className="text-4xl md:text-5xl font-extrabold text-pink-700 mb-8 drop-shadow-lg text-center">
           Let's Click Some K-Cute Moments! 💕
         </h2>
@@ -134,7 +134,8 @@ export default function Booth() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-7xl mx-auto">
-          {/* Tab switcher only shown on customize screen */}
+
+          {/* Tab switcher only on customize screen */}
           {(activeTab === "custom" || activeTab === "quick") && (
             <TabsList className="grid grid-cols-2 w-full max-w-xs mx-auto mb-6">
               <TabsTrigger value="custom">🎨 Customize</TabsTrigger>
@@ -145,8 +146,7 @@ export default function Booth() {
           {/* ── Customize ── */}
           <TabsContent value="custom">
             <div className="flex gap-6 items-start max-w-5xl mx-auto">
-              {/* Steps */}
-              <div className="flex-1 flex flex-col gap-6">
+              <div className="flex-1 flex flex-col gap-5">
                 <Step title="1. Pick a Layout">
                   <LayoutSelector selectedLayout={selectedLayout} onSelect={setSelectedLayout} />
                 </Step>
@@ -169,12 +169,12 @@ export default function Booth() {
               <div className="w-64 flex-shrink-0 sticky top-24 self-start bg-white/90 border-2 border-dashed border-pink-300 rounded-2xl p-4 flex flex-col items-center gap-3">
                 <p className="text-pink-500 font-semibold text-xs tracking-wide">✨ Live Preview</p>
                 {selectedLayout && selectedFrame
-                  ? <div style={{ transform:"scale(0.75)", transformOrigin:"top center", marginBottom: -80 }}>
+                  ? <div style={{ transform:"scale(0.75)", transformOrigin:"top center", marginBottom:-80 }}>
                       <PhotoFrame layout={selectedLayout?.value} frame={selectedFrame} filter={selectedFilter} images={[]} />
                     </div>
                   : <div className="py-10 flex flex-col items-center gap-2">
                       <span className="text-4xl">📸</span>
-                      <p className="text-pink-400 text-xs italic text-center">Select layout &amp; frame to preview here</p>
+                      <p className="text-pink-400 text-xs italic text-center">Select layout &amp; frame to preview</p>
                     </div>
                 }
               </div>
@@ -185,9 +185,8 @@ export default function Booth() {
           <TabsContent value="quick">
             <div className="max-w-5xl mx-auto flex flex-col items-center gap-6">
               <TemplateGallery onSelect={handleTemplateSelect} selectedTemplate={selectedTemplate} />
-              <button onClick={() => setActiveTab("camera")}
-                disabled={!selectedTemplate}
-                className="px-8 py-2.5 rounded-full bg-pink-500 text-white font-bold hover:bg-pink-600 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-md">
+              <button onClick={() => setActiveTab("camera")} disabled={!selectedTemplate}
+                className="px-8 py-2.5 rounded-full bg-pink-500 text-white font-bold hover:bg-pink-600 transition disabled:opacity-40 shadow-md">
                 Next → Camera 📸
               </button>
             </div>
@@ -195,113 +194,123 @@ export default function Booth() {
 
           {/* ── Camera ── */}
           <TabsContent value="camera">
-            <div className="max-w-2xl mx-auto">
-              <div className="bg-white/80 rounded-3xl shadow-xl p-6">
-                <h3 className="text-xl font-extrabold text-pink-700 mb-1 text-center">
-                  📸 Take {frameCount} Photo{frameCount > 1 ? "s" : ""}
-                </h3>
-                <p className="text-center text-pink-400 text-sm mb-4">
-                  {isCapturing
-                    ? `Shot ${capturedImages.length + 1} of ${frameCount} — smile! 😊`
-                    : capturedImages.length === frameCount && frameCount > 0
-                      ? "✅ All shots done!"
-                      : `${frameCount} shot${frameCount > 1 ? "s" : ""} will be taken automatically`}
-                </p>
-
-                <CameraView videoRef={videoRef} />
-                <Countdown start={countdownActive} duration={3} onComplete={handleCountdownComplete} />
-
-                {!isCapturing && capturedImages.length < frameCount && (
-                  <CaptureButton onClick={startPhotoSequence} disabled={false} />
-                )}
-                {isCapturing && !countdownActive && (
-                  <p className="text-pink-400 text-sm mt-4 animate-pulse text-center">⏳ Get ready for the next shot…</p>
-                )}
-
-                {/* Captured thumbnails */}
-                {capturedImages.length > 0 && (
-                  <div className="mt-5">
-                    <p className="text-pink-600 font-semibold text-sm mb-3 text-center">
-                      📷 {capturedImages.length} / {frameCount} captured
-                    </p>
-                    <div className="grid grid-cols-4 gap-2">
-                      {capturedImages.map((img, idx) => (
-                        <img key={idx} src={img} alt={`Shot ${idx + 1}`}
-                          className="rounded-lg border-2 border-pink-200 shadow object-cover aspect-video w-full" />
-                      ))}
-                    </div>
-
-                    {capturedImages.length === frameCount && !isCapturing && (
-                      <div className="mt-5 flex justify-center gap-3">
-                        <button onClick={handleRetake}
-                          className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-6 rounded-full border border-gray-200 transition">
-                          🔄 Retake
-                        </button>
-                        <button onClick={() => setActiveTab("preview")}
-                          className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-6 rounded-full shadow transition">
-                          👁️ Preview Strip →
-                        </button>
-                      </div>
-                    )}
+            <div className="max-w-2xl mx-auto bg-white/80 rounded-3xl shadow-xl p-6">
+              <h3 className="text-xl font-extrabold text-pink-700 mb-1 text-center">
+                📸 Take {frameCount} Photo{frameCount > 1 ? "s" : ""}
+              </h3>
+              <p className="text-center text-pink-400 text-sm mb-4">
+                {isCapturing ? `Shot ${capturedImages.length + 1} of ${frameCount} — smile! 😊`
+                  : capturedImages.length === frameCount && frameCount > 0 ? "✅ All shots done!"
+                  : `${frameCount} shot${frameCount > 1 ? "s" : ""} will be taken automatically`}
+              </p>
+              <CameraView videoRef={videoRef} />
+              <Countdown start={countdownActive} duration={3} onComplete={handleCountdownComplete} />
+              {!isCapturing && capturedImages.length < frameCount && (
+                <CaptureButton onClick={startPhotoSequence} disabled={false} />
+              )}
+              {isCapturing && !countdownActive && (
+                <p className="text-pink-400 text-sm mt-4 animate-pulse text-center">⏳ Get ready for the next shot…</p>
+              )}
+              {capturedImages.length > 0 && (
+                <div className="mt-5">
+                  <p className="text-pink-600 font-semibold text-sm mb-3 text-center">
+                    📷 {capturedImages.length} / {frameCount} captured
+                  </p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {capturedImages.map((img, idx) => (
+                      <img key={idx} src={img} alt={`Shot ${idx+1}`}
+                        className="rounded-lg border-2 border-pink-200 shadow object-cover aspect-video w-full" />
+                    ))}
                   </div>
-                )}
-              </div>
+                  {capturedImages.length === frameCount && !isCapturing && (
+                    <div className="mt-5 flex justify-center gap-3">
+                      <button onClick={handleRetake}
+                        className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-6 rounded-full border border-gray-200 transition">
+                        🔄 Retake
+                      </button>
+                      <button onClick={() => setActiveTab("preview")}
+                        className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-6 rounded-full shadow transition">
+                        👁️ Preview Strip →
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </TabsContent>
 
           {/* ── Preview ── */}
           <TabsContent value="preview">
-            <div className="max-w-6xl mx-auto bg-white/80 rounded-3xl shadow-xl p-6">
-              <div className="text-center mb-5">
-                <h3 className="text-2xl font-extrabold text-pink-700">🖼️ Preview & Place Stickers</h3>
-                <p className="text-pink-400 text-sm mt-1">Drag stickers onto your strip. Resize, rotate, delete. Then continue! 💕</p>
+            <div style={{maxWidth:900, margin:"0 auto", background:"rgba(255,255,255,0.85)", borderRadius:24, padding:24, boxShadow:"0 4px 24px rgba(0,0,0,0.08)"}}>
+
+              {/* Title */}
+              <div style={{textAlign:"center", marginBottom:16}}>
+                <h3 style={{fontSize:18, fontWeight:800, color:"#be185d", margin:0}}>🖼️ Preview & Add Stickers</h3>
+                <p style={{fontSize:12, color:"#f9a8d4", margin:"4px 0 0"}}>Drag stickers onto your strip • click to select • use icons to edit</p>
               </div>
 
-              {/* Side by side: strip LEFT, sticker picker RIGHT */}
-              <div className="flex flex-col lg:flex-row gap-6 items-start justify-center">
+              {/* Main layout: strip LEFT, picker RIGHT */}
+              <div style={{display:"flex", flexDirection:"row", gap:20, alignItems:"flex-start", justifyContent:"center"}}>
 
-                {/* LEFT — photo strip */}
-                <div className="flex flex-col items-center gap-3 flex-shrink-0">
-                  <p className="text-pink-400 text-xs font-semibold">Your Strip</p>
-                  {/* Render the frame with placed stickers as a live preview */}
-                  <div className="relative">
-                    <PhotoFrame
-                      layout={activeLayout} frame={activeFrame}
-                      filter={activeFilter} stickerPlacements={stickerPlacements}
-                      images={capturedImages}
-                    />
-                    {/* Invisible drag overlay rendered via StickerCanvas — strip only, no picker */}
-                  </div>
-                </div>
+                {/* LEFT col — strip + small shots grid */}
+                <div style={{flexShrink:0, display:"flex", flexDirection:"column", gap:10, alignItems:"center"}}>
 
-                {/* RIGHT — sticker controls */}
-                <div className="flex-1 min-w-0">
+                  {/* Draggable strip */}
                   <StickerCanvas
                     layout={activeLayout} frame={activeFrame}
                     filter={activeFilter} images={capturedImages}
                     placements={stickerPlacements}
                     onPlacementsChange={setStickerPlacements}
-                    previewOnly={false}
+                    selectedId={stickerSelectedId}
+                    onSelectId={setStickerSelectedId}
+                    stripOnly={true}
+                  />
+
+                  {/* Individual shots — small thumbnails UNDER the strip */}
+                  {capturedImages.length > 0 && (
+                    <div style={{background:"rgba(255,255,255,0.9)", borderRadius:12, padding:10, border:"1px solid #fce7f3", width:"100%"}}>
+                      <p style={{fontSize:11, color:"#ec4899", fontWeight:600, marginBottom:6}}>📷 Your shots</p>
+                      <div style={{display:"grid", gridTemplateColumns:"repeat(2, 1fr)", gap:5}}>
+                        {capturedImages.map((img, idx) => (
+                          <div key={idx} style={{position:"relative"}}>
+                            <img src={img} alt={`Shot ${idx+1}`} style={{width:"100%", height:60, objectFit:"cover", borderRadius:8, border:"2px solid white", boxShadow:"0 1px 4px rgba(0,0,0,0.1)"}} />
+                            <span style={{position:"absolute", bottom:3, left:3, background:"#ec4899", color:"white", fontSize:9, fontWeight:700, padding:"1px 5px", borderRadius:99}}>#{idx+1}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* RIGHT col — sticker picker */}
+                <div style={{flex:"1 1 240px", minWidth:220, maxWidth:320}}>
+                  <StickerCanvas
+                    layout={activeLayout} frame={activeFrame}
+                    filter={activeFilter} images={capturedImages}
+                    placements={stickerPlacements}
+                    onPlacementsChange={setStickerPlacements}
+                    selectedId={stickerSelectedId}
+                    onSelectId={setStickerSelectedId}
+                    pickerOnly={true}
                   />
                 </div>
+
               </div>
 
-              {/* Actions */}
-              <div className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
-                <button onClick={handleRetake}
-                  className="flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-8 rounded-full border border-gray-200 transition hover:scale-105">
-                  🔄 Retake Photos
+              {/* Action buttons */}
+              <div style={{display:"flex", justifyContent:"center", gap:10, marginTop:20}}>
+                <button onClick={handleRetake} style={{fontSize:12, fontWeight:600, padding:"8px 20px", borderRadius:99, background:"white", border:"1px solid #e5e7eb", color:"#6b7280", cursor:"pointer"}}>
+                  🔄 Retake
                 </button>
-                <button onClick={handleContinueToResult}
-                  className="flex items-center justify-center gap-2 bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition hover:scale-105">
+                <button onClick={handleContinueToResult} style={{fontSize:12, fontWeight:700, padding:"8px 24px", borderRadius:99, background:"#ec4899", color:"white", border:"none", cursor:"pointer", boxShadow:"0 2px 8px rgba(236,72,153,0.4)"}}>
                   Continue → 💖
                 </button>
               </div>
-              <p className="text-center text-xs text-pink-300 mt-3">
-                Download, share and save to Memories on the next screen
-              </p>
+              <p style={{textAlign:"center", fontSize:11, color:"#f9a8d4", marginTop:8}}>Download, share and save to Memories on the next screen</p>
+
             </div>
           </TabsContent>
+
         </Tabs>
       </section>
     </PageLayout>
