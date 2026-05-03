@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   collection, addDoc, getDocs, deleteDoc,
-  doc, query, where, orderBy, serverTimestamp,
+  doc, query, where, serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase/config";
 import { supabase } from "../supabase/config";
@@ -29,7 +29,7 @@ export function useMemories() {
   // ── Save ──────────────────────────────────────────────────────────────────
   // Uploads the composited strip PNG to Supabase Storage,
   // then writes metadata (imageURL, layout, filter…) to Firestore.
-  const saveMemory = async ({ imageDataUrl, layout, frame, filter, stickers }) => {
+  const saveMemory = async ({ imageDataUrl, layout, frame, filter, stickers, title }) => {
     if (!user) throw new Error("Must be logged in to save memories");
     setSaving(true);
     setError(null);
@@ -57,10 +57,11 @@ export function useMemories() {
       await addDoc(collection(db, "memories"), {
         uid:         user.uid,
         imageURL,
-        storagePath: filePath,   // kept so we can delete from Supabase later
-        layout:      layout  || null,
-        frame:       frame   || null,
-        filter:      filter  || null,
+        storagePath: filePath,
+        title:       title    || "My Memory",
+        layout:      layout   || null,
+        frame:       frame    || null,
+        filter:      filter   || null,
         stickers:    stickers || [],
         createdAt:   serverTimestamp(),
       });
@@ -75,20 +76,30 @@ export function useMemories() {
     }
   };
 
-  // ── Fetch ─────────────────────────────────────────────────────────────────
   const fetchMemories = async () => {
     if (!user) return [];
     setLoading(true);
     setError(null);
     try {
+      // Simple query with no orderBy — avoids needing a composite Firestore index.
+      // We sort by createdAt descending in JS after fetching.
       const q    = query(
         collection(db, "memories"),
-        where("uid", "==", user.uid),
-        orderBy("createdAt", "desc")
+        where("uid", "==", user.uid)
       );
       const snap = await getDocs(q);
-      return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+      // Sort newest first in JS
+      docs.sort((a, b) => {
+        const aTime = a.createdAt?.toMillis?.() ?? 0;
+        const bTime = b.createdAt?.toMillis?.() ?? 0;
+        return bTime - aTime;
+      });
+
+      return docs;
     } catch (err) {
+      console.error("[fetchMemories] error:", err);
       setError(err.message);
       return [];
     } finally {

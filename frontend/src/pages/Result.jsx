@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
-import { Share2, RefreshCw, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { Share2, RefreshCw, CheckCircle2, XCircle, Loader2, X } from "lucide-react";
 import PageLayout from "../components/layout/PageLayout";
 import PhotoFrame from "../components/shared/PhotoFrame";
 import DownloadButton from "../components/shared/DownloadButton";
@@ -8,65 +8,25 @@ import { useAuth } from "../context/AuthContext";
 import { useMemories } from "../hooks/useMemories";
 import { renderStripToDataUrl } from "../utils/renderStripToDataUrl";
 
-// ─── Toast ────────────────────────────────────────────────────────────────────
 function Toast({ toast, onDismiss }) {
   const timerRef = useRef(null);
-
   useEffect(() => {
     if (!toast) return;
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(onDismiss, 4000);
     return () => clearTimeout(timerRef.current);
   }, [toast, onDismiss]);
-
   if (!toast) return null;
-
   const isSuccess = toast.type === "success";
   return (
-    <div
-      style={{
-        position: "fixed",
-        bottom: 32,
-        left: "50%",
-        transform: "translateX(-50%)",
-        zIndex: 9999,
-        animation: "toastIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both",
-      }}
-    >
-      <style>{`
-        @keyframes toastIn {
-          from { opacity: 0; transform: translateX(-50%) translateY(24px) scale(0.92); }
-          to   { opacity: 1; transform: translateX(-50%) translateY(0)   scale(1); }
-        }
-      `}</style>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          background: isSuccess ? "#fff1f2" : "#fef2f2",
-          border: `1.5px solid ${isSuccess ? "#fda4af" : "#fca5a5"}`,
-          borderRadius: 99,
-          padding: "10px 20px",
-          boxShadow: "0 8px 32px rgba(236,72,153,0.18)",
-          minWidth: 220,
-        }}
-      >
-        {isSuccess
-          ? <CheckCircle2 size={18} color="#e11d48" />
-          : <XCircle     size={18} color="#dc2626" />}
-        <span style={{ fontSize: 13, fontWeight: 700, color: isSuccess ? "#be185d" : "#b91c1c" }}>
-          {toast.message}
-        </span>
+    <div style={{ position:"fixed", bottom:32, left:"50%", transform:"translateX(-50%)", zIndex:9999, animation:"toastIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+      <style>{`@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(24px) scale(0.92)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}`}</style>
+      <div style={{ display:"flex", alignItems:"center", gap:10, background:isSuccess?"#fff1f2":"#fef2f2", border:`1.5px solid ${isSuccess?"#fda4af":"#fca5a5"}`, borderRadius:99, padding:"10px 20px", boxShadow:"0 8px 32px rgba(236,72,153,0.18)", minWidth:220 }}>
+        {isSuccess ? <CheckCircle2 size={18} color="#e11d48"/> : <XCircle size={18} color="#dc2626"/>}
+        <span style={{ fontSize:13, fontWeight:700, color:isSuccess?"#be185d":"#b91c1c" }}>{toast.message}</span>
         {isSuccess && (
-          <Link to="/memories" style={{ marginLeft: 6 }}>
-            <span style={{
-              fontSize: 11, fontWeight: 700, color: "white",
-              background: "#ec4899", borderRadius: 99, padding: "3px 10px",
-              whiteSpace: "nowrap",
-            }}>
-              View 🌸
-            </span>
+          <Link to="/memories" style={{ marginLeft:6 }}>
+            <span style={{ fontSize:11, fontWeight:700, color:"white", background:"#ec4899", borderRadius:99, padding:"3px 10px", whiteSpace:"nowrap" }}>View 🌸</span>
           </Link>
         )}
       </div>
@@ -74,11 +34,46 @@ function Toast({ toast, onDismiss }) {
   );
 }
 
-// ─── Result ───────────────────────────────────────────────────────────────────
+function NameModal({ onConfirm, onCancel, saving }) {
+  const [title, setTitle] = useState("");
+  const inputRef = useRef(null);
+  useEffect(() => { setTimeout(() => inputRef.current?.focus(), 80); }, []);
+  return (
+    <div onClick={onCancel} style={{ position:"fixed", inset:0, zIndex:9998, display:"flex", alignItems:"center", justifyContent:"center", padding:16, background:"rgba(0,0,0,0.45)", backdropFilter:"blur(4px)" }}>
+      <div onClick={e => e.stopPropagation()} style={{ background:"white", borderRadius:24, padding:"28px 24px", width:"100%", maxWidth:360, boxShadow:"0 24px 60px rgba(236,72,153,0.18)", animation:"modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+        <style>{`@keyframes modalIn{from{opacity:0;transform:scale(0.88)}to{opacity:1;transform:scale(1)}} @keyframes rspin{to{transform:rotate(360deg)}}`}</style>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
+          <div>
+            <p style={{ fontSize:18, fontWeight:800, color:"#be185d", margin:0 }}>Name this memory 💖</p>
+            <p style={{ fontSize:12, color:"#f9a8d4", margin:"2px 0 0" }}>Give your strip a cute title</p>
+          </div>
+          <button onClick={onCancel} style={{ background:"none", border:"none", cursor:"pointer", color:"#d1d5db", padding:2 }}><X size={18}/></button>
+        </div>
+        <input
+          ref={inputRef}
+          type="text"
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && !saving && onConfirm(title.trim())}
+          placeholder="Give your memory a name 💖"
+          maxLength={40}
+          style={{ width:"100%", border:"1.5px solid #fce7f3", borderRadius:12, padding:"10px 14px", fontSize:14, color:"#be185d", outline:"none", background:"#fff7f8", boxSizing:"border-box", marginBottom:16 }}
+        />
+        <div style={{ display:"flex", gap:8 }}>
+          <button onClick={onCancel} disabled={saving} style={{ flex:1, border:"1.5px solid #fce7f3", background:"white", color:"#f9a8d4", fontWeight:700, fontSize:13, padding:"9px 0", borderRadius:99, cursor:"pointer" }}>Cancel</button>
+          <button onClick={() => onConfirm(title.trim())} disabled={saving} style={{ flex:2, background:"linear-gradient(135deg,#f472b6,#ec4899)", color:"white", fontWeight:700, fontSize:13, padding:"9px 0", borderRadius:99, border:"none", cursor:saving?"not-allowed":"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6, opacity:saving?0.7:1 }}>
+            {saving ? <><Loader2 size={13} style={{ animation:"rspin 1s linear infinite" }}/> Saving…</> : "💾 Save Memory"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Result() {
-  const { state }  = useLocation();
-  const navigate   = useNavigate();
-  const { user }   = useAuth();
+  const { state }      = useLocation();
+  const navigate       = useNavigate();
+  const { user }       = useAuth();
   const { saveMemory } = useMemories();
 
   const images            = state?.images            || [];
@@ -87,51 +82,28 @@ export default function Result() {
   const filter            = state?.filter            || null;
   const stickerPlacements = state?.stickerPlacements || [];
 
-  const [saved,    setSaved]    = useState(false);
-  const [saving,   setSaving]   = useState(false);
-  const [shared,   setShared]   = useState(false);
-  const [toast,    setToast]    = useState(null);   // { type: "success"|"error", message }
+  const [saved,     setSaved]     = useState(false);
+  const [saving,    setSaving]    = useState(false);
+  const [shared,    setShared]    = useState(false);
+  const [toast,     setToast]     = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
-  const showToast = (type, message) => setToast({ type, message });
+  const showToast    = (type, message) => setToast({ type, message });
   const dismissToast = () => setToast(null);
 
-  // ── Save the fully-composited strip to Firebase Storage + Firestore ──
-  const handleSaveMemory = async () => {
-    if (saving || saved) return;
+  const handleSaveClick = () => { if (!saving && !saved) setShowModal(true); };
+
+  const handleSaveConfirm = async (title) => {
     setSaving(true);
-    console.log("[save] handleSaveMemory started");
     try {
-      console.log("[save] calling renderStripToDataUrl...");
-      const renderPromise = renderStripToDataUrl({
-        capturedImages: images,
-        layout,
-        frame,
-        filter,
-        stickerPlacements,
-        scale: 1,
-      });
-
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Render timed out — please try again.")), 25000)
-      );
-
+      const renderPromise  = renderStripToDataUrl({ capturedImages:images, layout, frame, filter, stickerPlacements, scale:1 });
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Render timed out — please try again.")), 25000));
       const compositeDataUrl = await Promise.race([renderPromise, timeoutPromise]);
-      console.log("[save] render complete, dataUrl length:", compositeDataUrl?.length);
-
-      console.log("[save] calling saveMemory (Firebase upload)...");
-      await saveMemory({
-        imageDataUrl: compositeDataUrl,
-        layout,
-        frame,
-        filter,
-        stickers: stickerPlacements,
-      });
-      console.log("[save] saveMemory complete ✅");
-
+      await saveMemory({ imageDataUrl:compositeDataUrl, layout, frame, filter, stickers:stickerPlacements, title: title || "My Memory" });
+      setShowModal(false);
       setSaved(true);
       showToast("success", "Saved to your Memories Wall! 🌸");
     } catch (err) {
-      console.error("[save] FAILED:", err);
       const msg = err?.message || "Save failed. Please try again.";
       showToast("error", msg.length > 80 ? "Save failed. Check your connection and try again." : msg);
     } finally {
@@ -141,14 +113,7 @@ export default function Result() {
 
   const handleShare = async () => {
     if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "My K-Click Booth Strip 📸",
-          text:  "Check out my cute K-style photo strip! 💕",
-          url:   window.location.href,
-        });
-        setShared(true);
-      } catch (_) {}
+      try { await navigator.share({ title:"My K-Click Booth Strip 📸", text:"Check out my cute K-style photo strip! 💕", url:window.location.href }); setShared(true); } catch (_) {}
     } else {
       await navigator.clipboard.writeText(window.location.href);
       setShared(true);
@@ -163,11 +128,7 @@ export default function Result() {
           <span className="text-6xl mb-4">📷</span>
           <h3 className="text-2xl font-bold text-pink-600 mb-2">No photos yet!</h3>
           <p className="text-pink-400 mb-8 text-sm">Head to the Booth first.</p>
-          <Link to="/booth">
-            <button className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:scale-105 transition-all">
-              Go to Booth 📸
-            </button>
-          </Link>
+          <Link to="/booth"><button className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:scale-105 transition-all">Go to Booth 📸</button></Link>
         </div>
       </PageLayout>
     );
@@ -176,118 +137,62 @@ export default function Result() {
   return (
     <PageLayout>
       <Toast toast={toast} onDismiss={dismissToast} />
+      {showModal && <NameModal onConfirm={handleSaveConfirm} onCancel={() => { if (!saving) setShowModal(false); }} saving={saving} />}
 
-      <main className="py-10 px-4" style={{ maxWidth: 900, margin: "0 auto" }}>
-
-        {/* Header */}
+      <main className="py-10 px-4" style={{ maxWidth:900, margin:"0 auto" }}>
         <div className="text-center mb-8">
           <h2 className="text-3xl font-extrabold text-pink-700 drop-shadow-lg">🎉 Your K-Photo Strip!</h2>
           <p className="text-pink-400 mt-1 text-sm">Download, share or save to your Memories Wall 💕</p>
         </div>
 
-        {/* Two column */}
-        <div style={{ display: "flex", flexDirection: "row", gap: 24, alignItems: "flex-start", flexWrap: "wrap", justifyContent: "center" }}>
+        <div style={{ display:"flex", flexDirection:"row", gap:24, alignItems:"flex-start", flexWrap:"wrap", justifyContent:"center" }}>
 
-          {/* LEFT — photo strip */}
-          <div style={{ flexShrink: 0 }} className="bg-white/90 rounded-3xl shadow-2xl p-5 flex flex-col items-center gap-2">
+          <div style={{ flexShrink:0 }} className="bg-white/90 rounded-3xl shadow-2xl p-5 flex flex-col items-center gap-2">
             <p className="text-pink-400 font-semibold text-xs tracking-widest uppercase">Your Strip</p>
-            <PhotoFrame
-              layout={layout} frame={frame} filter={filter}
-              stickerPlacements={stickerPlacements} images={images}
-            />
+            <PhotoFrame layout={layout} frame={frame} filter={filter} stickerPlacements={stickerPlacements} images={images} />
           </div>
 
-          {/* RIGHT — action cards */}
-          <div style={{ flex: "1 1 260px", minWidth: 240, display: "flex", flexDirection: "column", gap: 10 }}>
-
+          <div style={{ flex:"1 1 260px", minWidth:240, display:"flex", flexDirection:"column", gap:10 }}>
             <p className="text-sm font-extrabold text-pink-700">What would you like to do?</p>
 
-            {/* Download */}
             <div className="flex items-center justify-between bg-pink-50 rounded-2xl px-4 py-3 border border-pink-100">
-              <div>
-                <p className="font-semibold text-pink-700 text-sm">⬇️ Download</p>
-                <p className="text-xs text-pink-300">Save as PNG to your device</p>
-              </div>
-              <DownloadButton
-                capturedImages={images} layout={layout} frame={frame}
-                filter={filter} stickerPlacements={stickerPlacements}
-              />
+              <div><p className="font-semibold text-pink-700 text-sm">⬇️ Download</p><p className="text-xs text-pink-300">Save as PNG to your device</p></div>
+              <DownloadButton capturedImages={images} layout={layout} frame={frame} filter={filter} stickerPlacements={stickerPlacements} />
             </div>
 
-            {/* Share */}
             <div className="flex items-center justify-between bg-purple-50 rounded-2xl px-4 py-3 border border-purple-100">
-              <div>
-                <p className="font-semibold text-purple-700 text-sm">🔗 Share</p>
-                <p className="text-xs text-purple-300">{shared ? "Link copied! ✅" : "Share or copy link"}</p>
-              </div>
-              <button
-                onClick={handleShare}
-                className="flex items-center gap-1.5 bg-purple-500 hover:bg-purple-600 text-white text-xs font-bold py-1.5 px-4 rounded-full shadow transition hover:scale-105 whitespace-nowrap"
-              >
-                <Share2 size={12} /> Share
+              <div><p className="font-semibold text-purple-700 text-sm">🔗 Share</p><p className="text-xs text-purple-300">{shared ? "Link copied! ✅" : "Share or copy link"}</p></div>
+              <button onClick={handleShare} className="flex items-center gap-1.5 bg-purple-500 hover:bg-purple-600 text-white text-xs font-bold py-1.5 px-4 rounded-full shadow transition hover:scale-105 whitespace-nowrap">
+                <Share2 size={12}/> Share
               </button>
             </div>
 
-            {/* Save to Memories */}
-            <div className={`flex items-center justify-between rounded-2xl px-4 py-3 border transition-all duration-300 ${
-              saved
-                ? "bg-green-50 border-green-200"
-                : "bg-rose-50 border-rose-100"
-            }`}>
+            <div className={`flex items-center justify-between rounded-2xl px-4 py-3 border transition-all duration-300 ${saved ? "bg-green-50 border-green-200" : "bg-rose-50 border-rose-100"}`}>
               <div>
-                <p className={`font-semibold text-sm ${saved ? "text-green-700" : "text-rose-700"}`}>
-                  🌸 Save to Memories
-                </p>
+                <p className={`font-semibold text-sm ${saved ? "text-green-700" : "text-rose-700"}`}>🌸 Save to Memories</p>
                 <p className={`text-xs ${saved ? "text-green-400" : "text-rose-300"}`}>
-                  {!user   ? "Sign in to save your strip"
-                  : saved  ? "Saved to your Memories Wall ✅"
-                  : saving ? "Rendering & uploading…"
-                  :          "Add to your Memories Wall"}
+                  {!user ? "Sign in to save your strip" : saved ? "Saved to your Memories Wall ✅" : "Add to your Memories Wall"}
                 </p>
               </div>
-
               <div className="flex-shrink-0">
                 {!user ? (
-                  <Link to="/auth">
-                    <button className="bg-rose-400 hover:bg-rose-500 text-white text-xs font-bold py-1.5 px-4 rounded-full shadow transition whitespace-nowrap">
-                      Sign In
-                    </button>
-                  </Link>
+                  <Link to="/auth"><button className="bg-rose-400 hover:bg-rose-500 text-white text-xs font-bold py-1.5 px-4 rounded-full shadow transition whitespace-nowrap">Sign In</button></Link>
                 ) : saved ? (
-                  <Link to="/memories">
-                    <button className="bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1.5 px-4 rounded-full shadow transition hover:scale-105 whitespace-nowrap">
-                      View 🌸
-                    </button>
-                  </Link>
+                  <Link to="/memories"><button className="bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1.5 px-4 rounded-full shadow transition hover:scale-105 whitespace-nowrap">View 🌸</button></Link>
                 ) : (
-                  <button
-                    onClick={handleSaveMemory}
-                    disabled={saving}
-                    className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold py-1.5 px-4 rounded-full shadow transition hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
-                  >
-                    {saving
-                      ? <><Loader2 size={12} className="animate-spin" /> Saving…</>
-                      : <>💾 Save</>
-                    }
+                  <button onClick={handleSaveClick} disabled={saving} className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold py-1.5 px-4 rounded-full shadow transition hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap">
+                    {saving ? <><Loader2 size={12} className="animate-spin"/> Saving…</> : <>💾 Save</>}
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Restart */}
             <div className="flex items-center justify-between bg-gray-50 rounded-2xl px-4 py-3 border border-gray-100">
-              <div>
-                <p className="font-semibold text-gray-600 text-sm">🔄 Start Over</p>
-                <p className="text-xs text-gray-400">Fresh session at the booth</p>
-              </div>
-              <button
-                onClick={() => navigate("/booth")}
-                className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white text-xs font-bold py-1.5 px-4 rounded-full shadow transition hover:scale-105 whitespace-nowrap"
-              >
-                <RefreshCw size={12} /> Restart
+              <div><p className="font-semibold text-gray-600 text-sm">🔄 Start Over</p><p className="text-xs text-gray-400">Fresh session at the booth</p></div>
+              <button onClick={() => navigate("/booth")} className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white text-xs font-bold py-1.5 px-4 rounded-full shadow transition hover:scale-105 whitespace-nowrap">
+                <RefreshCw size={12}/> Restart
               </button>
             </div>
-
           </div>
         </div>
       </main>
