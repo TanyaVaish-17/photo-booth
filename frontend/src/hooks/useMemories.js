@@ -3,9 +3,22 @@ import {
   collection, addDoc, getDocs, deleteDoc,
   doc, query, where, orderBy, serverTimestamp,
 } from "firebase/firestore";
-import { ref, uploadString, getDownloadURL, deleteObject } from "firebase/storage";
-import { db, storage } from "../firebase/config";
+import { db } from "../firebase/config";
+import { supabase } from "../supabase/config";
 import { useAuth } from "../context/AuthContext";
+
+// Storage bucket name — create this in your Supabase dashboard
+const BUCKET = "memories";
+
+// Convert a data URL → Blob for clean binary upload
+function dataUrlToBlob(dataUrl) {
+  const [header, base64] = dataUrl.split(",");
+  const mime   = header.match(/:(.*?);/)[1];
+  const binary = atob(base64);
+  const arr    = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
 
 export function useMemories() {
   const { user } = useAuth();
@@ -13,32 +26,48 @@ export function useMemories() {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState(null);
 
-  // Save a photo strip → Storage (image) + Firestore (metadata)
+  // ── Save ──────────────────────────────────────────────────────────────────
+  // Uploads the composited strip PNG to Supabase Storage,
+  // then writes metadata (imageURL, layout, filter…) to Firestore.
   const saveMemory = async ({ imageDataUrl, layout, frame, filter, stickers }) => {
     if (!user) throw new Error("Must be logged in to save memories");
     setSaving(true);
     setError(null);
-    try {
-      // 1. Upload image to Firebase Storage
-      const filename  = `memories/${user.uid}/${Date.now()}.png`;
-      const storageRef = ref(storage, filename);
-      await uploadString(storageRef, imageDataUrl, "data_url");
-      const downloadURL = await getDownloadURL(storageRef);
 
-      // 2. Save metadata to Firestore
+    try {
+      // 1. Upload image blob to Supabase Storage
+      const blob     = dataUrlToBlob(imageDataUrl);
+      const filePath = `${user.uid}/${Date.now()}.png`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET)
+        .upload(filePath, blob, { contentType: "image/png", upsert: false });
+
+      if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+
+      // 2. Get the public URL of the uploaded image
+      const { data: urlData } = supabase.storage
+        .from(BUCKET)
+        .getPublicUrl(filePath);
+
+      const imageURL = urlData?.publicUrl;
+      if (!imageURL) throw new Error("Could not get public URL from Supabase");
+
+      // 3. Write metadata to Firestore
       await addDoc(collection(db, "memories"), {
-        uid:       user.uid,
-        imageURL:  downloadURL,
-        storagePath: filename,
-        layout:    layout   || null,
-        frame:     frame    || null,
-        filter:    filter   || null,
-        stickers:  stickers || [],
-        createdAt: serverTimestamp(),
+        uid:         user.uid,
+        imageURL,
+        storagePath: filePath,   // kept so we can delete from Supabase later
+        layout:      layout  || null,
+        frame:       frame   || null,
+        filter:      filter  || null,
+        stickers:    stickers || [],
+        createdAt:   serverTimestamp(),
       });
 
-      return downloadURL;
+      return imageURL;
     } catch (err) {
+      console.error("[useMemories] saveMemory failed:", err);
       setError(err.message);
       throw err;
     } finally {
@@ -46,7 +75,7 @@ export function useMemories() {
     }
   };
 
-  // Fetch all memories for the current user
+  // ── Fetch ─────────────────────────────────────────────────────────────────
   const fetchMemories = async () => {
     if (!user) return [];
     setLoading(true);
@@ -67,13 +96,17 @@ export function useMemories() {
     }
   };
 
-  // Delete a memory (Storage + Firestore)
+  // ── Delete ────────────────────────────────────────────────────────────────
+  // Removes the Firestore doc first, then deletes from Supabase Storage.
   const deleteMemory = async (memoryId, storagePath) => {
     setError(null);
     try {
       await deleteDoc(doc(db, "memories", memoryId));
       if (storagePath) {
-        await deleteObject(ref(storage, storagePath));
+        const { error: delError } = await supabase.storage
+          .from(BUCKET)
+          .remove([storagePath]);
+        if (delError) console.warn("[useMemories] Storage delete failed:", delError.message);
       }
     } catch (err) {
       setError(err.message);

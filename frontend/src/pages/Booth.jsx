@@ -245,16 +245,15 @@ export default function Booth() {
 
               {/* Title */}
               <div style={{textAlign:"center", marginBottom:16}}>
-                <h3 style={{fontSize:18, fontWeight:800, color:"#be185d", margin:0}}>🖼️ Preview & Add Stickers</h3>
+                <h3 style={{fontSize:30, fontWeight:800, color:"#be185d", margin:0}}>🖼️ Preview & Add Stickers</h3>
                 <p style={{fontSize:12, color:"#f9a8d4", margin:"4px 0 0"}}>Drag stickers onto your strip • click to select • use icons to edit</p>
               </div>
 
               {/* Main layout: strip LEFT, picker RIGHT */}
               <div style={{display:"flex", flexDirection:"row", gap:20, alignItems:"flex-start", justifyContent:"center"}}>
 
-                {/* LEFT col — strip + small shots grid */}
+                {/* LEFT col — strip only */}
                 <div style={{flexShrink:0, display:"flex", flexDirection:"column", gap:10, alignItems:"center"}}>
-
                   {/* Draggable strip */}
                   <StickerCanvas
                     layout={activeLayout} frame={activeFrame}
@@ -265,21 +264,6 @@ export default function Booth() {
                     onSelectId={setStickerSelectedId}
                     stripOnly={true}
                   />
-
-                  {/* Individual shots — small thumbnails UNDER the strip */}
-                  {capturedImages.length > 0 && (
-                    <div style={{background:"rgba(255,255,255,0.9)", borderRadius:12, padding:10, border:"1px solid #fce7f3", width:"100%"}}>
-                      <p style={{fontSize:11, color:"#ec4899", fontWeight:600, marginBottom:6}}>📷 Your shots</p>
-                      <div style={{display:"grid", gridTemplateColumns:"repeat(2, 1fr)", gap:5}}>
-                        {capturedImages.map((img, idx) => (
-                          <div key={idx} style={{position:"relative"}}>
-                            <img src={img} alt={`Shot ${idx+1}`} style={{width:"100%", height:60, objectFit:"cover", borderRadius:8, border:"2px solid white", boxShadow:"0 1px 4px rgba(0,0,0,0.1)"}} />
-                            <span style={{position:"absolute", bottom:3, left:3, background:"#ec4899", color:"white", fontSize:9, fontWeight:700, padding:"1px 5px", borderRadius:99}}>#{idx+1}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {/* RIGHT col — sticker picker */}
@@ -296,6 +280,25 @@ export default function Booth() {
                 </div>
 
               </div>
+
+              {/* Individual shots — full-width horizontal row BELOW the two columns */}
+              {capturedImages.length > 0 && (
+                <div style={{marginTop:20, background:"rgba(255,255,255,0.9)", borderRadius:14, padding:"12px 16px", border:"1px solid #fce7f3"}}>
+                  <p style={{fontSize:12, color:"#ec4899", fontWeight:700, marginBottom:10}}>📷 Your shots</p>
+                  <div style={{display:"flex", flexDirection:"row", gap:10, justifyContent:"center", flexWrap:"wrap"}}>
+                    {capturedImages.map((img, idx) => (
+                      <div key={idx} style={{position:"relative", flexShrink:0}}>
+                        <img
+                          src={img}
+                          alt={`Shot ${idx+1}`}
+                          style={{width:120, height:90, objectFit:"cover", borderRadius:10, border:"2px solid #fce7f3", boxShadow:"0 2px 8px rgba(0,0,0,0.1)", display:"block"}}
+                        />
+                        <span style={{position:"absolute", bottom:5, left:5, background:"#ec4899", color:"white", fontSize:10, fontWeight:700, padding:"2px 7px", borderRadius:99}}>#{idx+1}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Action buttons */}
               <div style={{display:"flex", justifyContent:"center", gap:10, marginTop:20}}>
