@@ -139,61 +139,74 @@ export default function Result() {
       <Toast toast={toast} onDismiss={dismissToast} />
       {showModal && <NameModal onConfirm={handleSaveConfirm} onCancel={() => { if (!saving) setShowModal(false); }} saving={saving} />}
 
-      <main className="py-10 px-4" style={{ maxWidth:900, margin:"0 auto" }}>
+      <main className="py-10 px-4" style={{ maxWidth: 900, margin: "0 auto" }}>
         <div className="text-center mb-8">
           <h2 className="text-3xl font-extrabold text-pink-700 drop-shadow-lg">🎉 Your K-Photo Strip!</h2>
           <p className="text-pink-400 mt-1 text-sm">Download, share or save to your Memories Wall 💕</p>
         </div>
 
-        <div style={{ display:"flex", flexDirection:"row", gap:24, alignItems:"flex-start", flexWrap:"wrap", justifyContent:"center" }}>
+        {/* ── MAIN ROW: strip + actions side by side ── */}
+        <div style={{ display:"flex", flexDirection:"row", flexWrap:"wrap", gap:24, alignItems:"flex-start", justifyContent:"center", width:"100%" }}>
 
-          <div style={{ flexShrink:0 }} className="bg-white/90 rounded-3xl shadow-2xl p-5 flex flex-col items-center gap-2">
-            <p className="text-pink-400 font-semibold text-xs tracking-widest uppercase">Your Strip</p>
+          {/* Strip card — shrinks to fit its content */}
+          <div style={{ background:"rgba(255,255,255,0.9)", borderRadius:24, boxShadow:"0 20px 60px rgba(0,0,0,0.1)", padding:20, display:"flex", flexDirection:"column", alignItems:"center", gap:8, flexShrink:0 }}>
+            <p style={{ color:"#f9a8d4", fontWeight:600, fontSize:11, letterSpacing:"0.1em", textTransform:"uppercase", margin:0 }}>Your Strip</p>
             <PhotoFrame layout={layout} frame={frame} filter={filter} stickerPlacements={stickerPlacements} images={images} />
           </div>
 
-          <div style={{ flex:"1 1 260px", minWidth:240, display:"flex", flexDirection:"column", gap:10 }}>
-            <p className="text-sm font-extrabold text-pink-700">What would you like to do?</p>
+          {/* Actions panel — grows to fill remaining space */}
+          <div style={{ display:"flex", flexDirection:"column", gap:12, flex:1, minWidth:260 }}>
+            <p style={{ fontSize:14, fontWeight:800, color:"#be185d", margin:0 }}>What would you like to do?</p>
 
-            <div className="flex items-center justify-between bg-pink-50 rounded-2xl px-4 py-3 border border-pink-100">
-              <div><p className="font-semibold text-pink-700 text-sm">⬇️ Download</p><p className="text-xs text-pink-300">Save as PNG to your device</p></div>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:"#fdf2f8", borderRadius:16, padding:"12px 16px", border:"1px solid #fce7f3" }}>
+              <div>
+                <p style={{ fontWeight:600, color:"#be185d", fontSize:14, margin:0 }}>⬇️ Download</p>
+                <p style={{ fontSize:12, color:"#f9a8d4", margin:0 }}>Save as PNG to your device</p>
+              </div>
               <DownloadButton capturedImages={images} layout={layout} frame={frame} filter={filter} stickerPlacements={stickerPlacements} />
             </div>
 
-            <div className="flex items-center justify-between bg-purple-50 rounded-2xl px-4 py-3 border border-purple-100">
-              <div><p className="font-semibold text-purple-700 text-sm">🔗 Share</p><p className="text-xs text-purple-300">{shared ? "Link copied! ✅" : "Share or copy link"}</p></div>
-              <button onClick={handleShare} className="flex items-center gap-1.5 bg-purple-500 hover:bg-purple-600 text-white text-xs font-bold py-1.5 px-4 rounded-full shadow transition hover:scale-105 whitespace-nowrap">
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:"#faf5ff", borderRadius:16, padding:"12px 16px", border:"1px solid #ede9fe" }}>
+              <div>
+                <p style={{ fontWeight:600, color:"#7c3aed", fontSize:14, margin:0 }}>🔗 Share</p>
+                <p style={{ fontSize:12, color:"#c4b5fd", margin:0 }}>{shared ? "Link copied! ✅" : "Share or copy link"}</p>
+              </div>
+              <button onClick={handleShare} style={{ display:"flex", alignItems:"center", gap:6, background:"#7c3aed", color:"white", fontSize:12, fontWeight:700, padding:"6px 16px", borderRadius:99, border:"none", cursor:"pointer", whiteSpace:"nowrap" }}>
                 <Share2 size={12}/> Share
               </button>
             </div>
 
-            <div className={`flex items-center justify-between rounded-2xl px-4 py-3 border transition-all duration-300 ${saved ? "bg-green-50 border-green-200" : "bg-rose-50 border-rose-100"}`}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background: saved ? "#f0fdf4" : "#fff1f2", borderRadius:16, padding:"12px 16px", border: saved ? "1px solid #bbf7d0" : "1px solid #fecdd3", transition:"all 0.3s" }}>
               <div>
-                <p className={`font-semibold text-sm ${saved ? "text-green-700" : "text-rose-700"}`}>🌸 Save to Memories</p>
-                <p className={`text-xs ${saved ? "text-green-400" : "text-rose-300"}`}>
+                <p style={{ fontWeight:600, fontSize:14, margin:0, color: saved ? "#15803d" : "#be123c" }}>🌸 Save to Memories</p>
+                <p style={{ fontSize:12, margin:0, color: saved ? "#86efac" : "#fda4af" }}>
                   {!user ? "Sign in to save your strip" : saved ? "Saved to your Memories Wall ✅" : "Add to your Memories Wall"}
                 </p>
               </div>
-              <div className="flex-shrink-0">
+              <div style={{ flexShrink:0 }}>
                 {!user ? (
-                  <Link to="/auth"><button className="bg-rose-400 hover:bg-rose-500 text-white text-xs font-bold py-1.5 px-4 rounded-full shadow transition whitespace-nowrap">Sign In</button></Link>
+                  <Link to="/auth"><button style={{ background:"#fb7185", color:"white", fontSize:12, fontWeight:700, padding:"6px 16px", borderRadius:99, border:"none", cursor:"pointer", whiteSpace:"nowrap" }}>Sign In</button></Link>
                 ) : saved ? (
-                  <Link to="/memories"><button className="bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1.5 px-4 rounded-full shadow transition hover:scale-105 whitespace-nowrap">View 🌸</button></Link>
+                  <Link to="/memories"><button style={{ background:"#22c55e", color:"white", fontSize:12, fontWeight:700, padding:"6px 16px", borderRadius:99, border:"none", cursor:"pointer", whiteSpace:"nowrap" }}>View 🌸</button></Link>
                 ) : (
-                  <button onClick={handleSaveClick} disabled={saving} className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold py-1.5 px-4 rounded-full shadow transition hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap">
+                  <button onClick={handleSaveClick} disabled={saving} style={{ display:"flex", alignItems:"center", gap:6, background:"#f43f5e", color:"white", fontSize:12, fontWeight:700, padding:"6px 16px", borderRadius:99, border:"none", cursor:saving?"not-allowed":"pointer", whiteSpace:"nowrap", opacity:saving?0.6:1 }}>
                     {saving ? <><Loader2 size={12} className="animate-spin"/> Saving…</> : <>💾 Save</>}
                   </button>
                 )}
               </div>
             </div>
 
-            <div className="flex items-center justify-between bg-gray-50 rounded-2xl px-4 py-3 border border-gray-100">
-              <div><p className="font-semibold text-gray-600 text-sm">🔄 Start Over</p><p className="text-xs text-gray-400">Fresh session at the booth</p></div>
-              <button onClick={() => navigate("/booth")} className="flex items-center gap-1.5 bg-gray-500 hover:bg-gray-600 text-white text-xs font-bold py-1.5 px-4 rounded-full shadow transition hover:scale-105 whitespace-nowrap">
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:"#f9fafb", borderRadius:16, padding:"12px 16px", border:"1px solid #e5e7eb" }}>
+              <div>
+                <p style={{ fontWeight:600, color:"#4b5563", fontSize:14, margin:0 }}>🔄 Start Over</p>
+                <p style={{ fontSize:12, color:"#9ca3af", margin:0 }}>Fresh session at the booth</p>
+              </div>
+              <button onClick={() => navigate("/booth")} style={{ display:"flex", alignItems:"center", gap:6, background:"#6b7280", color:"white", fontSize:12, fontWeight:700, padding:"6px 16px", borderRadius:99, border:"none", cursor:"pointer", whiteSpace:"nowrap" }}>
                 <RefreshCw size={12}/> Restart
               </button>
             </div>
           </div>
+
         </div>
       </main>
     </PageLayout>
