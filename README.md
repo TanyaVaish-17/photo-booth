@@ -84,7 +84,7 @@ photo-booth/
 
 ## 🚀 Getting Started
 
-### Clone the repository
+### Clone the repo
 
 ```bash
 git clone https://github.com/TanyaVaish-17/photo-booth.git
