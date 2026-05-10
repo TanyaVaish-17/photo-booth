@@ -1,3 +1,10 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* animations.css already handles custom keyframes */
+/* Prevent horizontal scroll */
+html, body {
+  overflow-x: hidden;
+}
+button {
+  touch-action: manipulation;
+}

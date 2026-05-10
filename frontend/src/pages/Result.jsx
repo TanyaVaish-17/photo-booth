@@ -19,11 +19,12 @@ function Toast({ toast, onDismiss }) {
   if (!toast) return null;
   const isSuccess = toast.type === "success";
   return (
-    <div style={{ position:"fixed", bottom:32, left:"50%", transform:"translateX(-50%)", zIndex:9999, animation:"toastIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+    // On mobile: full width with margin. On desktop: centered fixed width (original)
+    <div style={{ position:"fixed", bottom:32, left:"50%", transform:"translateX(-50%)", zIndex:9999, animation:"toastIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both", width:"calc(100% - 32px)", maxWidth:400 }}>
       <style>{`@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(24px) scale(0.92)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}`}</style>
       <div style={{ display:"flex", alignItems:"center", gap:10, background:isSuccess?"#fff1f2":"#fef2f2", border:`1.5px solid ${isSuccess?"#fda4af":"#fca5a5"}`, borderRadius:99, padding:"10px 20px", boxShadow:"0 8px 32px rgba(236,72,153,0.18)", minWidth:220 }}>
         {isSuccess ? <CheckCircle2 size={18} color="#e11d48"/> : <XCircle size={18} color="#dc2626"/>}
-        <span style={{ fontSize:13, fontWeight:700, color:isSuccess?"#be185d":"#b91c1c" }}>{toast.message}</span>
+        <span style={{ fontSize:13, fontWeight:700, color:isSuccess?"#be185d":"#b91c1c", flex:1 }}>{toast.message}</span>
         {isSuccess && (
           <Link to="/memories" style={{ marginLeft:6 }}>
             <span style={{ fontSize:11, fontWeight:700, color:"white", background:"#ec4899", borderRadius:99, padding:"3px 10px", whiteSpace:"nowrap" }}>View 🌸</span>
@@ -49,14 +50,10 @@ function NameModal({ onConfirm, onCancel, saving }) {
           </div>
           <button onClick={onCancel} style={{ background:"none", border:"none", cursor:"pointer", color:"#d1d5db", padding:2 }}><X size={18}/></button>
         </div>
-        <input
-          ref={inputRef}
-          type="text"
-          value={title}
+        <input ref={inputRef} type="text" value={title}
           onChange={e => setTitle(e.target.value)}
           onKeyDown={e => e.key === "Enter" && !saving && onConfirm(title.trim())}
-          placeholder="Give your memory a name 💖"
-          maxLength={40}
+          placeholder="Give your memory a name 💖" maxLength={40}
           style={{ width:"100%", border:"1.5px solid #fce7f3", borderRadius:12, padding:"10px 14px", fontSize:14, color:"#be185d", outline:"none", background:"#fff7f8", boxSizing:"border-box", marginBottom:16 }}
         />
         <div style={{ display:"flex", gap:8 }}>
@@ -90,7 +87,6 @@ export default function Result() {
 
   const showToast    = (type, message) => setToast({ type, message });
   const dismissToast = () => setToast(null);
-
   const handleSaveClick = () => { if (!saving && !saved) setShowModal(true); };
 
   const handleSaveConfirm = async (title) => {
@@ -100,15 +96,12 @@ export default function Result() {
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Render timed out — please try again.")), 25000));
       const compositeDataUrl = await Promise.race([renderPromise, timeoutPromise]);
       await saveMemory({ imageDataUrl:compositeDataUrl, layout, frame, filter, stickers:stickerPlacements, title: title || "My Memory" });
-      setShowModal(false);
-      setSaved(true);
+      setShowModal(false); setSaved(true);
       showToast("success", "Saved to your Memories Wall! 🌸");
     } catch (err) {
       const msg = err?.message || "Save failed. Please try again.";
       showToast("error", msg.length > 80 ? "Save failed. Check your connection and try again." : msg);
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   };
 
   const handleShare = async () => {
@@ -139,23 +132,25 @@ export default function Result() {
       <Toast toast={toast} onDismiss={dismissToast} />
       {showModal && <NameModal onConfirm={handleSaveConfirm} onCancel={() => { if (!saving) setShowModal(false); }} saving={saving} />}
 
-      <main className="py-10 px-4" style={{ maxWidth: 900, margin: "0 auto" }}>
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-extrabold text-pink-700 drop-shadow-lg">🎉 Your K-Photo Strip!</h2>
+      <main className="py-8 md:py-10 px-4" style={{ maxWidth:900, margin:"0 auto" }}>
+        <div className="text-center mb-6 md:mb-8">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-pink-700 drop-shadow-lg">🎉 Your K-Photo Strip!</h2>
           <p className="text-pink-400 mt-1 text-sm">Download, share or save to your Memories Wall 💕</p>
         </div>
 
-        {/* ── MAIN ROW: strip + actions side by side ── */}
-        <div style={{ display:"flex", flexDirection:"row", flexWrap:"wrap", gap:24, alignItems:"flex-start", justifyContent:"center", width:"100%" }}>
+        {/* Desktop: strip + actions side by side (original). Mobile: stacked */}
+        <div className="flex flex-col md:flex-row flex-wrap gap-5 md:gap-6 items-start justify-center w-full">
 
-          {/* Strip card — shrinks to fit its content */}
+          {/* Strip card */}
           <div style={{ background:"rgba(255,255,255,0.9)", borderRadius:24, boxShadow:"0 20px 60px rgba(0,0,0,0.1)", padding:20, display:"flex", flexDirection:"column", alignItems:"center", gap:8, flexShrink:0 }}>
             <p style={{ color:"#f9a8d4", fontWeight:600, fontSize:11, letterSpacing:"0.1em", textTransform:"uppercase", margin:0 }}>Your Strip</p>
-            <PhotoFrame layout={layout} frame={frame} filter={filter} stickerPlacements={stickerPlacements} images={images} />
+            <div className="overflow-x-auto flex justify-center w-full">
+              <PhotoFrame layout={layout} frame={frame} filter={filter} stickerPlacements={stickerPlacements} images={images} />
+            </div>
           </div>
 
-          {/* Actions panel — grows to fill remaining space */}
-          <div style={{ display:"flex", flexDirection:"column", gap:12, flex:1, minWidth:260 }}>
+          {/* Actions panel */}
+          <div style={{ display:"flex", flexDirection:"column", gap:12, flex:1, minWidth:260 }} className="w-full md:w-auto">
             <p style={{ fontSize:14, fontWeight:800, color:"#be185d", margin:0 }}>What would you like to do?</p>
 
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:"#fdf2f8", borderRadius:16, padding:"12px 16px", border:"1px solid #fce7f3" }}>
@@ -206,7 +201,6 @@ export default function Result() {
               </button>
             </div>
           </div>
-
         </div>
       </main>
     </PageLayout>

@@ -20,13 +20,13 @@ const layoutToFrameCount = {
 
 export default function Booth() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab]                 = useState("custom");
-  const [selectedLayout, setSelectedLayout]       = useState(null);
-  const [selectedFrame, setSelectedFrame]         = useState(null);
-  const [selectedTemplate, setSelectedTemplate]   = useState(null);
-  const [selectedFilter, setSelectedFilter]       = useState(null);
+  const [activeTab, setActiveTab]               = useState("custom");
+  const [selectedLayout, setSelectedLayout]     = useState(null);
+  const [selectedFrame, setSelectedFrame]       = useState(null);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [selectedFilter, setSelectedFilter]     = useState(null);
   const [stickerPlacements, setStickerPlacements] = useState([]);
-  const [stickerSelectedId, setStickerSelectedId]   = useState(null);
+  const [stickerSelectedId, setStickerSelectedId] = useState(null);
   const videoRef = useRef(null);
 
   const [countdownActive, setCountdownActive] = useState(false);
@@ -113,29 +113,28 @@ export default function Booth() {
 
   return (
     <PageLayout>
-      <section className="py-12 px-4 sm:px-6 min-h-screen">
-        <h2 className="text-4xl md:text-5xl font-extrabold text-pink-700 mb-8 drop-shadow-lg text-center">
+      <section className="py-8 md:py-12 px-4 md:px-6 min-h-screen">
+        <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-pink-700 mb-6 md:mb-8 drop-shadow-lg text-center">
           Let's Click Some K-Cute Moments! 💕
         </h2>
 
         {/* Progress bar */}
-        <div className="flex items-center justify-center gap-2 mb-8 text-sm font-semibold">
+        <div className="flex items-center justify-center gap-1.5 md:gap-2 mb-6 md:mb-8 text-xs md:text-sm font-semibold">
           {[{ key:"custom", label:"1. Customize" }, { key:"camera", label:"2. Camera" }, { key:"preview", label:"3. Preview" }]
             .map(({ key, label }, i, arr) => (
               <React.Fragment key={key}>
-                <span className={`px-4 py-1.5 rounded-full transition-all duration-300 ${
+                <span className={`px-3 md:px-4 py-1 md:py-1.5 rounded-full transition-all duration-300 whitespace-nowrap ${
                   activeTab === key ? "bg-pink-500 text-white shadow-md"
                   : capturedImages.length > 0 && key === "preview" ? "bg-pink-200 text-pink-700"
                   : "bg-white/60 text-pink-400"
                 }`}>{label}</span>
-                {i < arr.length - 1 && <span className="text-pink-300">→</span>}
+                {i < arr.length - 1 && <span className="text-pink-300 text-xs">→</span>}
               </React.Fragment>
             ))}
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-7xl mx-auto">
 
-          {/* Tab switcher only on customize screen */}
           {(activeTab === "custom" || activeTab === "quick") && (
             <TabsList className="grid grid-cols-2 w-full max-w-xs mx-auto mb-6">
               <TabsTrigger value="custom">🎨 Customize</TabsTrigger>
@@ -145,8 +144,9 @@ export default function Booth() {
 
           {/* ── Customize ── */}
           <TabsContent value="custom">
-            <div className="flex gap-6 items-start max-w-5xl mx-auto">
-              <div className="flex-1 flex flex-col gap-5">
+            {/* Desktop: side-by-side. Mobile: stacked */}
+            <div className="flex flex-col md:flex-row gap-5 md:gap-6 items-start max-w-5xl mx-auto">
+              <div className="flex-1 flex flex-col gap-4 md:gap-5 w-full">
                 <Step title="1. Pick a Layout">
                   <LayoutSelector selectedLayout={selectedLayout} onSelect={setSelectedLayout} />
                 </Step>
@@ -159,22 +159,22 @@ export default function Booth() {
                 <div className="flex justify-end">
                   <button onClick={() => setActiveTab("camera")}
                     disabled={!selectedLayout || !selectedFrame}
-                    className="px-8 py-2.5 rounded-full bg-pink-500 text-white font-bold hover:bg-pink-600 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-md">
+                    className="w-full md:w-auto px-8 py-2.5 rounded-full bg-pink-500 text-white font-bold hover:bg-pink-600 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-md">
                     Next → Camera 📸
                   </button>
                 </div>
               </div>
 
-              {/* Live Preview */}
-              <div className="w-64 flex-shrink-0 sticky top-24 self-start bg-white/90 border-2 border-dashed border-pink-300 rounded-2xl p-4 flex flex-col items-center gap-3">
+              {/* Live Preview — sticky sidebar on desktop, compact card on mobile */}
+              <div className="w-full md:w-64 md:flex-shrink-0 md:sticky md:top-24 md:self-start bg-white/90 border-2 border-dashed border-pink-300 rounded-2xl p-4 flex flex-col items-center gap-3">
                 <p className="text-pink-500 font-semibold text-xs tracking-wide">✨ Live Preview</p>
                 {selectedLayout && selectedFrame
                   ? <div style={{ transform:"scale(0.75)", transformOrigin:"top center", marginBottom:-80 }}>
                       <PhotoFrame layout={selectedLayout?.value} frame={selectedFrame} filter={selectedFilter} images={[]} />
                     </div>
-                  : <div className="py-10 flex flex-col items-center gap-2">
+                  : <div className="py-8 md:py-10 flex flex-col items-center gap-2">
                       <span className="text-4xl">📸</span>
-                      <p className="text-pink-400 text-xs italic text-center">Select layout &amp; frame to preview</p>
+                      <p className="text-pink-400 text-xs italic text-center">Select layout & frame to preview</p>
                     </div>
                 }
               </div>
@@ -186,7 +186,7 @@ export default function Booth() {
             <div className="max-w-5xl mx-auto flex flex-col items-center gap-6">
               <TemplateGallery onSelect={handleTemplateSelect} selectedTemplate={selectedTemplate} />
               <button onClick={() => setActiveTab("camera")} disabled={!selectedTemplate}
-                className="px-8 py-2.5 rounded-full bg-pink-500 text-white font-bold hover:bg-pink-600 transition disabled:opacity-40 shadow-md">
+                className="w-full md:w-auto px-8 py-2.5 rounded-full bg-pink-500 text-white font-bold hover:bg-pink-600 transition disabled:opacity-40 shadow-md">
                 Next → Camera 📸
               </button>
             </div>
@@ -194,8 +194,8 @@ export default function Booth() {
 
           {/* ── Camera ── */}
           <TabsContent value="camera">
-            <div className="max-w-2xl mx-auto bg-white/80 rounded-3xl shadow-xl p-6">
-              <h3 className="text-xl font-extrabold text-pink-700 mb-1 text-center">
+            <div className="max-w-2xl mx-auto bg-white/80 rounded-3xl shadow-xl p-4 md:p-6">
+              <h3 className="text-lg md:text-xl font-extrabold text-pink-700 mb-1 text-center">
                 📸 Take {frameCount} Photo{frameCount > 1 ? "s" : ""}
               </h3>
               <p className="text-center text-pink-400 text-sm mb-4">
@@ -223,7 +223,7 @@ export default function Booth() {
                     ))}
                   </div>
                   {capturedImages.length === frameCount && !isCapturing && (
-                    <div className="mt-5 flex justify-center gap-3">
+                    <div className="mt-5 flex flex-col sm:flex-row justify-center gap-2 md:gap-3">
                       <button onClick={handleRetake}
                         className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-6 rounded-full border border-gray-200 transition">
                         🔄 Retake
@@ -239,22 +239,17 @@ export default function Booth() {
             </div>
           </TabsContent>
 
-          {/* ── Preview ── */}
+          {/* ── Preview — original inline styles preserved exactly ── */}
           <TabsContent value="preview">
-            <div style={{maxWidth:900, margin:"0 auto", background:"rgba(255,255,255,0.85)", borderRadius:24, padding:24, boxShadow:"0 4px 24px rgba(0,0,0,0.08)"}}>
-
-              {/* Title */}
-              <div style={{textAlign:"center", marginBottom:16}}>
-                <h3 style={{fontSize:30, fontWeight:800, color:"#be185d", margin:0}}>🖼️ Preview & Add Stickers</h3>
-                <p style={{fontSize:12, color:"#f9a8d4", margin:"4px 0 0"}}>Drag stickers onto your strip • click to select • use icons to edit</p>
+            <div style={{ maxWidth:900, margin:"0 auto", background:"rgba(255,255,255,0.85)", borderRadius:24, padding:24, boxShadow:"0 4px 24px rgba(0,0,0,0.08)" }}>
+              <div style={{ textAlign:"center", marginBottom:16 }}>
+                <h3 style={{ fontSize:30, fontWeight:800, color:"#be185d", margin:0 }}>🖼️ Preview & Add Stickers</h3>
+                <p style={{ fontSize:12, color:"#f9a8d4", margin:"4px 0 0" }}>Drag stickers onto your strip • click to select • use icons to edit</p>
               </div>
 
-              {/* Main layout: strip LEFT, picker RIGHT */}
-              <div style={{display:"flex", flexDirection:"row", gap:20, alignItems:"flex-start", justifyContent:"center"}}>
-
-                {/* LEFT col — strip only */}
-                <div style={{flexShrink:0, display:"flex", flexDirection:"column", gap:10, alignItems:"center"}}>
-                  {/* Draggable strip */}
+              {/* Desktop: strip LEFT + picker RIGHT. Mobile: stacked */}
+              <div className="flex flex-col md:flex-row gap-5 items-start justify-center">
+                <div style={{ flexShrink:0, display:"flex", flexDirection:"column", gap:10, alignItems:"center" }}>
                   <StickerCanvas
                     layout={activeLayout} frame={activeFrame}
                     filter={activeFilter} images={capturedImages}
@@ -265,9 +260,7 @@ export default function Booth() {
                     stripOnly={true}
                   />
                 </div>
-
-                {/* RIGHT col — sticker picker */}
-                <div style={{flex:"1 1 240px", minWidth:220, maxWidth:320}}>
+                <div className="w-full md:w-auto" style={{ flex:"1 1 240px", minWidth:220, maxWidth:320 }}>
                   <StickerCanvas
                     layout={activeLayout} frame={activeFrame}
                     filter={activeFilter} images={capturedImages}
@@ -278,39 +271,32 @@ export default function Booth() {
                     pickerOnly={true}
                   />
                 </div>
-
               </div>
 
-              {/* Individual shots — full-width horizontal row BELOW the two columns */}
               {capturedImages.length > 0 && (
-                <div style={{marginTop:20, background:"rgba(255,255,255,0.9)", borderRadius:14, padding:"12px 16px", border:"1px solid #fce7f3"}}>
-                  <p style={{fontSize:12, color:"#ec4899", fontWeight:700, marginBottom:10}}>📷 Your shots</p>
-                  <div style={{display:"flex", flexDirection:"row", gap:10, justifyContent:"center", flexWrap:"wrap"}}>
+                <div style={{ marginTop:20, background:"rgba(255,255,255,0.9)", borderRadius:14, padding:"12px 16px", border:"1px solid #fce7f3" }}>
+                  <p style={{ fontSize:12, color:"#ec4899", fontWeight:700, marginBottom:10 }}>📷 Your shots</p>
+                  <div style={{ display:"flex", flexDirection:"row", gap:10, justifyContent:"center", flexWrap:"wrap" }}>
                     {capturedImages.map((img, idx) => (
-                      <div key={idx} style={{position:"relative", flexShrink:0}}>
-                        <img
-                          src={img}
-                          alt={`Shot ${idx+1}`}
-                          style={{width:120, height:90, objectFit:"cover", borderRadius:10, border:"2px solid #fce7f3", boxShadow:"0 2px 8px rgba(0,0,0,0.1)", display:"block"}}
-                        />
-                        <span style={{position:"absolute", bottom:5, left:5, background:"#ec4899", color:"white", fontSize:10, fontWeight:700, padding:"2px 7px", borderRadius:99}}>#{idx+1}</span>
+                      <div key={idx} style={{ position:"relative", flexShrink:0 }}>
+                        <img src={img} alt={`Shot ${idx+1}`}
+                          style={{ width:120, height:90, objectFit:"cover", borderRadius:10, border:"2px solid #fce7f3", boxShadow:"0 2px 8px rgba(0,0,0,0.1)", display:"block" }} />
+                        <span style={{ position:"absolute", bottom:5, left:5, background:"#ec4899", color:"white", fontSize:10, fontWeight:700, padding:"2px 7px", borderRadius:99 }}>#{idx+1}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Action buttons */}
-              <div style={{display:"flex", justifyContent:"center", gap:10, marginTop:20}}>
-                <button onClick={handleRetake} style={{fontSize:12, fontWeight:600, padding:"8px 20px", borderRadius:99, background:"white", border:"1px solid #e5e7eb", color:"#6b7280", cursor:"pointer"}}>
+              <div style={{ display:"flex", justifyContent:"center", gap:10, marginTop:20, flexWrap:"wrap" }}>
+                <button onClick={handleRetake} style={{ fontSize:12, fontWeight:600, padding:"8px 20px", borderRadius:99, background:"white", border:"1px solid #e5e7eb", color:"#6b7280", cursor:"pointer" }}>
                   🔄 Retake
                 </button>
-                <button onClick={handleContinueToResult} style={{fontSize:12, fontWeight:700, padding:"8px 24px", borderRadius:99, background:"#ec4899", color:"white", border:"none", cursor:"pointer", boxShadow:"0 2px 8px rgba(236,72,153,0.4)"}}>
+                <button onClick={handleContinueToResult} style={{ fontSize:12, fontWeight:700, padding:"8px 24px", borderRadius:99, background:"#ec4899", color:"white", border:"none", cursor:"pointer", boxShadow:"0 2px 8px rgba(236,72,153,0.4)" }}>
                   Continue → 💖
                 </button>
               </div>
-              <p style={{textAlign:"center", fontSize:11, color:"#f9a8d4", marginTop:8}}>Download, share and save to Memories on the next screen</p>
-
+              <p style={{ textAlign:"center", fontSize:11, color:"#f9a8d4", marginTop:8 }}>Download, share and save to Memories on the next screen</p>
             </div>
           </TabsContent>
 
@@ -321,8 +307,8 @@ export default function Booth() {
 }
 
 const Step = ({ title, children }) => (
-  <div className="text-left w-full px-5 py-5 rounded-2xl shadow-sm bg-white/80 border border-pink-50">
-    <h3 className="text-base font-bold mb-4 text-pink-600">{title}</h3>
+  <div className="text-left w-full px-4 md:px-5 py-4 md:py-5 rounded-2xl shadow-sm bg-white/80 border border-pink-50">
+    <h3 className="text-base font-bold mb-3 md:mb-4 text-pink-600">{title}</h3>
     {children}
   </div>
 );

@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { Trash2, Camera } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Trash2, Camera, X } from "lucide-react";
 import PageLayout from "../components/layout/PageLayout";
 import { useAuth } from "../context/AuthContext";
 import { useMemories } from "../hooks/useMemories";
 
 export default function MemoriesPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { fetchMemories, deleteMemory, loading } = useMemories();
   const [memories, setMemories] = useState([]);
   const [deleting, setDeleting] = useState(null);
@@ -23,9 +24,7 @@ export default function MemoriesPage() {
       await deleteMemory(id, storagePath);
       setMemories((prev) => prev.filter((m) => m.id !== id));
       if (lightbox?.id === id) setLightbox(null);
-    } finally {
-      setDeleting(null);
-    }
+    } finally { setDeleting(null); }
   };
 
   const fmt = (mem) =>
@@ -33,7 +32,6 @@ export default function MemoriesPage() {
       ? mem.createdAt.toDate().toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" })
       : "Just now";
 
-  // ── Not logged in ─────────────────────────────────────────────────────────
   if (!user) {
     return (
       <PageLayout>
@@ -41,11 +39,12 @@ export default function MemoriesPage() {
           <span className="text-6xl mb-4">🔐</span>
           <h2 className="text-3xl font-extrabold text-pink-700 mb-3">Sign In to See Your Memories</h2>
           <p className="text-pink-400 mb-8">Your K-photo strips are saved here after every session 💕</p>
-          <Link to="/auth">
-            <button className="bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:scale-105 transition-all duration-300">
-              Sign In / Sign Up 🎀
-            </button>
-          </Link>
+          <button
+            onClick={() => navigate("/auth")}
+            className="text-white font-bold py-3 px-8 rounded-full transition-all duration-300 hover:scale-105 hover:-translate-y-0.5"
+            style={{ background: "linear-gradient(135deg,#ec4899,#f43f5e)", boxShadow: "0 6px 20px rgba(236,72,153,0.4)" }}>
+            Sign In / Sign Up 🎀
+          </button>
         </div>
       </PageLayout>
     );
@@ -53,41 +52,38 @@ export default function MemoriesPage() {
 
   return (
     <PageLayout>
-
-      {/* ── Lightbox ─────────────────────────────────────────────────────────── */}
+      {/* ── Lightbox — bottom sheet on mobile, centered modal on desktop ── */}
       {lightbox && (
-        <div
-          onClick={() => setLightbox(null)}
-          style={{ position:"fixed", inset:0, zIndex:50, display:"flex", alignItems:"center", justifyContent:"center", padding:16, background:"rgba(0,0,0,0.6)", backdropFilter:"blur(8px)" }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{ background:"white", borderRadius:28, padding:24, maxWidth:340, width:"100%", display:"flex", flexDirection:"column", gap:16, boxShadow:"0 32px 80px rgba(236,72,153,0.2)", animation:"lbIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both" }}
-          >
-            <style>{`@keyframes lbIn{from{opacity:0;transform:scale(0.88)}to{opacity:1;transform:scale(1)}}`}</style>
+        <div onClick={() => setLightbox(null)}
+          className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4"
+          style={{ background:"rgba(0,0,0,0.6)", backdropFilter:"blur(8px)" }}>
+          <div onClick={e => e.stopPropagation()}
+            className="bg-white w-full md:max-w-sm md:rounded-3xl rounded-t-3xl flex flex-col gap-4 shadow-2xl overflow-y-auto"
+            style={{ padding:24, maxHeight:"92vh", animation:"lbIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+            <style>{`@keyframes lbIn{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
-            {/* Close */}
-            <button onClick={() => setLightbox(null)} style={{ alignSelf:"flex-end", background:"#fce7f3", border:"none", borderRadius:"50%", width:28, height:28, cursor:"pointer", fontSize:16, color:"#be185d", display:"flex", alignItems:"center", justifyContent:"center" }}>×</button>
-
-            {/* Image */}
-            <img src={lightbox.imageURL} alt={lightbox.title} style={{ width:"100%", borderRadius:16, objectFit:"contain", maxHeight:"60vh", background:"#fff7f8" }} />
-
-            {/* Title + date */}
-            <div>
-              <p style={{ fontWeight:800, fontSize:15, color:"#be185d", margin:"0 0 2px", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+            <div className="flex items-center justify-between">
+              <p style={{ fontWeight:800, fontSize:15, color:"#be185d", margin:0, flex:1, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", paddingRight:8 }}>
                 {lightbox.title || "My Memory"}
               </p>
-              <p style={{ fontSize:12, color:"#f9a8d4", margin:0 }}>{fmt(lightbox)}</p>
+              <button onClick={() => setLightbox(null)}
+                style={{ background:"#fce7f3", border:"none", borderRadius:"50%", width:28, height:28, cursor:"pointer", fontSize:16, color:"#be185d", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                <X size={14} />
+              </button>
             </div>
 
-            {/* Actions */}
+            <img src={lightbox.imageURL} alt={lightbox.title}
+              style={{ width:"100%", borderRadius:16, objectFit:"contain", maxHeight:"55vh", background:"#fff7f8" }} />
+
+            <p style={{ fontSize:12, color:"#f9a8d4", margin:0 }}>{fmt(lightbox)}</p>
+
             <div style={{ display:"flex", gap:8 }}>
               <a href={lightbox.imageURL} download={`k-click-${lightbox.id}.png`}
                 style={{ flex:1, textAlign:"center", background:"linear-gradient(135deg,#f472b6,#ec4899)", color:"white", fontWeight:700, fontSize:12, padding:"9px 0", borderRadius:99, textDecoration:"none" }}>
                 ⬇️ Download
               </a>
               <button onClick={() => handleDelete(lightbox.id, lightbox.storagePath)} disabled={deleting === lightbox.id}
-                style={{ display:"flex", alignItems:"center", gap:4, background:"#fef2f2", color:"#ef4444", border:"none", fontWeight:700, fontSize:12, padding:"9px 14px", borderRadius:99, cursor:"pointer", opacity: deleting===lightbox.id ? 0.5:1 }}>
+                style={{ display:"flex", alignItems:"center", gap:4, background:"#fef2f2", color:"#ef4444", border:"none", fontWeight:700, fontSize:12, padding:"9px 14px", borderRadius:99, cursor:"pointer", opacity:deleting===lightbox.id?0.5:1 }}>
                 <Trash2 size={12}/>{deleting===lightbox.id?"…":"Delete"}
               </button>
             </div>
@@ -95,13 +91,15 @@ export default function MemoriesPage() {
         </div>
       )}
 
-      {/* ── Page ─────────────────────────────────────────────────────────────── */}
+      {/* ── Page ── */}
       <div style={{ minHeight:"100vh", background:"linear-gradient(160deg,#fff0f6 0%,#fdf2f8 40%,#f5f0ff 100%)" }}>
-        <section style={{ maxWidth:1100, margin:"0 auto", padding:"48px 24px" }}>
+        <section style={{ maxWidth:1100, margin:"0 auto", padding:"48px 24px" }} className="px-4 md:px-6 py-8 md:py-12">
 
           {/* Header */}
           <div style={{ textAlign:"center", marginBottom:40 }}>
-            <h2 style={{ fontSize:36, fontWeight:900, color:"#be185d", margin:"0 0 6px", letterSpacing:"-0.5px" }}>🌸 Your K-Memories</h2>
+            <h2 style={{ fontSize:36, fontWeight:900, color:"#be185d", margin:"0 0 6px", letterSpacing:"-0.5px" }} className="text-2xl md:text-4xl">
+              🌸 Your K-Memories
+            </h2>
             <p style={{ fontSize:13, color:"#f9a8d4", margin:0 }}>
               Hi <strong style={{ color:"#ec4899" }}>{user.displayName || user.email}</strong> — all your saved strips in one place 💖
             </p>
@@ -139,9 +137,9 @@ export default function MemoriesPage() {
             </p>
           )}
 
-          {/* Grid */}
+          {/* Grid — responsive: 1 col mobile, 2 tablet, 3 desktop, 4 wide */}
           {!loading && memories.length > 0 && (
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))", gap:28 }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-7">
               {memories.map((memory) => (
                 <MemoryCard
                   key={memory.id}
@@ -160,7 +158,6 @@ export default function MemoriesPage() {
   );
 }
 
-// ── Memory Card ───────────────────────────────────────────────────────────────
 function MemoryCard({ memory, fmt, deleting, onOpen, onDelete }) {
   const [hovered, setHovered] = useState(false);
   const isDeleting = deleting === memory.id;
@@ -173,9 +170,7 @@ function MemoryCard({ memory, fmt, deleting, onOpen, onDelete }) {
         background: "white",
         borderRadius: 20,
         overflow: "hidden",
-        boxShadow: hovered
-          ? "0 16px 40px rgba(236,72,153,0.18)"
-          : "0 2px 12px rgba(236,72,153,0.08)",
+        boxShadow: hovered ? "0 16px 40px rgba(236,72,153,0.18)" : "0 2px 12px rgba(236,72,153,0.08)",
         transform: hovered ? "translateY(-4px)" : "translateY(0)",
         transition: "all 0.25s ease",
         cursor: "pointer",
@@ -183,33 +178,20 @@ function MemoryCard({ memory, fmt, deleting, onOpen, onDelete }) {
         position: "relative",
       }}
     >
-      {/* Image */}
-      <div
-        onClick={onOpen}
-        style={{ background:"linear-gradient(135deg,#fff0f6,#fdf2f8)", display:"flex", alignItems:"center", justifyContent:"center", padding:"16px 16px 12px", minHeight:220 }}
-      >
-        <img
-          src={memory.imageURL}
-          alt={memory.title || "Memory"}
-          style={{ maxHeight:220, width:"auto", objectFit:"contain", borderRadius:12, display:"block" }}
-        />
+      <div onClick={onOpen}
+        style={{ background:"linear-gradient(135deg,#fff0f6,#fdf2f8)", display:"flex", alignItems:"center", justifyContent:"center", padding:"16px 16px 12px", minHeight:220 }}>
+        <img src={memory.imageURL} alt={memory.title || "Memory"}
+          style={{ maxHeight:220, width:"auto", objectFit:"contain", borderRadius:12, display:"block" }} />
       </div>
 
-      {/* Info */}
-      <div
-        onClick={onOpen}
-        style={{ padding:"12px 16px 14px", borderTop:"1px solid #fce7f3" }}
-      >
+      <div onClick={onOpen} style={{ padding:"12px 16px 14px", borderTop:"1px solid #fce7f3" }}>
         <p style={{ fontWeight:800, fontSize:13, color:"#be185d", margin:"0 0 3px", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
           {memory.title || "My Memory"}
         </p>
         <p style={{ fontSize:11, color:"#f9a8d4", margin:0 }}>{fmt(memory)}</p>
       </div>
 
-      {/* Delete button — top right, always visible on hover */}
-      <button
-        onClick={(e) => { e.stopPropagation(); onDelete(); }}
-        disabled={isDeleting}
+      <button onClick={(e) => { e.stopPropagation(); onDelete(); }} disabled={isDeleting}
         style={{
           position:"absolute", top:10, right:10,
           background: hovered ? "white" : "transparent",
@@ -220,8 +202,7 @@ function MemoryCard({ memory, fmt, deleting, onOpen, onDelete }) {
           boxShadow: hovered ? "0 2px 8px rgba(0,0,0,0.1)" : "none",
           color:"#ef4444",
         }}
-        title="Delete"
-      >
+        title="Delete">
         {isDeleting
           ? <span style={{ width:12, height:12, border:"2px solid #fca5a5", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.8s linear infinite", display:"block" }}/>
           : <Trash2 size={13}/>}
