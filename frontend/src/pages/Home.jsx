@@ -2,6 +2,9 @@ import React from "react";
 import { Link } from "react-router-dom";
 import PageLayout from "../components/layout/PageLayout";
 import themeImage from "../assets/h1.png";
+import fingerHeart from "../assets/sticker6.png";
+import teddyBear from "../assets/sticker3.png";
+import Ribbon from "../assets/sticker1.png";
 import layout1 from "../assets/layouts/layout1.png";
 import layout2 from "../assets/layouts/layout2.png";
 import layout3 from "../assets/layouts/layout3.png";
@@ -27,10 +30,10 @@ export default function Home() {
 
         {/* ── Stickers pinned well clear of text column ── */}
 
-        {/* Heart — above illustration column (right half), never overlapping text */}
-        <img src="https://cdn-icons-png.flaticon.com/512/833/833472.png" alt=""
-          className="hidden md:block absolute top-8 right-[44%] w-9 pointer-events-none z-10"
-          style={{ animation: "heartbeat 1.5s ease-in-out infinite" }} />
+        {/* Heart — above illustration column */}
+        <span
+          className="hidden md:block absolute top-8 right-[44%] pointer-events-none z-10 select-none"
+          style={{ fontSize:36, animation: "heartbeat 1.5s ease-in-out infinite", lineHeight:1 }}>❤️</span>
 
 
 
@@ -121,7 +124,7 @@ export default function Home() {
               />
 
               {/* Floating badge — repositioned slightly lower and inward */}
-              <div className="hidden md:flex absolute -bottom-3 left-[0%] z-20 items-center gap-2.5
+              <div className="hidden md:flex absolute -bottom-5 left-[15%] z-20 items-center gap-2.5
                 bg-white/95 rounded-2xl px-3.5 py-2.5 shadow-lg border border-pink-100"
                 style={{ animation: "bounce-slow 3.5s ease-in-out infinite" }}>
                 <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-400 to-rose-400 flex items-center justify-center text-base shadow-sm flex-shrink-0">
@@ -134,10 +137,10 @@ export default function Home() {
               </div>
 
               {/* Floating badge — top-right, inside illustration column */}
-              <div className="hidden md:flex absolute top-[1%] -right-4 z-20 items-center gap-2
+              <div className="hidden md:flex absolute top-[5%] -right-4 z-20 items-center gap-2
                 bg-white/95 rounded-2xl px-3.5 py-2.5 shadow-lg border border-pink-100"
                 style={{ animation: "bounce-slow 2.8s ease-in-out infinite", animationDelay: "0.9s" }}>
-                <span className="text-base" style={{ animation: "heartbeat 1.5s ease-in-out infinite" }}>💖</span>
+                <span style={{ fontSize:14, animation: "heartbeat 1.5s ease-in-out infinite", display:"inline-block" }}>💖</span>
                 <p className="text-xs font-black text-pink-800">K-Style Filters</p>
               </div>
 
