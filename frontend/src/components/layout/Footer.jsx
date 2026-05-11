@@ -134,8 +134,25 @@ transformOrigin:"center", fontSize:11 }}>💖</span> by <span style={{ fontWeigh
       {/* ════════════════════════════════════════
           DESKTOP LAYOUT — full 3-col grid
       ════════════════════════════════════════ */}
-      <div style={{ position:"relative", zIndex:1, maxWidth:1200, margin:"0 auto", padding:"26px 28px 18px" }}>
-        <div className="f-desktop" style={{ gridTemplateColumns:"repeat(3,1fr)", gap:"20px 44px", marginBottom:16 }}>
+      <div style={{ 
+          position:"relative",
+          zIndex:1,
+          maxWidth:1200,
+          margin:"0 auto",
+          padding:"32px 28px 20px",
+          minHeight:"260px",
+          display:"flex",
+          flexDirection:"column",
+          justifyContent:"space-between"
+        }}>
+        <div className="f-desktop" style={{ 
+          display:"grid",
+          gridTemplateColumns:"1.2fr 1fr 1.2fr", // side columns slightly wider
+          gap:"24px 60px", 
+          alignItems:"start",
+          width:"100%",
+          marginBottom:"22px"
+        }}>
 
           {/* COL 1 — Brand */}
           <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
@@ -185,7 +202,7 @@ transformOrigin:"center", fontSize:11 }}>💖</span> by <span style={{ fontWeigh
             <p style={{ margin:0, fontSize:11, color:"#9d174d", lineHeight:1.65, opacity:0.75, maxWidth:195 }}>
               Snap your cutest shots and save K-memories forever 💕
             </p>
-            <div style={{ position:"relative", display:"inline-block", marginTop:1 }}>
+            <div style={{ position:"relative", display:"inline-block", marginTop:1, maxWidth:"200px", width:"100%" }}>
               <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", width:160, height:52, borderRadius:99, background:"radial-gradient(ellipse,rgba(236,72,153,0.28) 0%,transparent 72%)", filter:"blur(10px)", pointerEvents:"none" }} />
               <span style={{ position:"absolute", top:-9, right:-6, fontSize:12, animation:"floatB 2.2s ease-in-out infinite", pointerEvents:"none", userSelect:"none", zIndex:3 }}>✨</span>
               <Link to="/booth" style={{ textDecoration:"none", display:"inline-block", position:"relative", zIndex:2 }}>
@@ -204,7 +221,14 @@ transformOrigin:"center", fontSize:11 }}>💖</span> by <span style={{ fontWeigh
 
         {/* Desktop divider + copyright */}
         <div className="f-desktop" style={{ height:1, background:"linear-gradient(90deg,transparent,rgba(236,72,153,0.2) 20%,rgba(244,114,182,0.3) 50%,rgba(236,72,153,0.2) 80%,transparent)", marginBottom:11 }} />
-        <div className="f-copyright-row f-desktop" style={{flexWrap:"wrap", gap:"4px 16px" }}>
+        <div className="f-copyright-row f-desktop" style={{
+          display:"flex",
+          justifyContent:"space-between",
+          alignItems:"center",
+          flexWrap:"wrap",
+          gap:"10px",
+          paddingTop:"6px"
+        }}>
           <p style={{ margin:0, fontSize:11, color:"#be185d", fontWeight:700 }}>© 2025 <span style={{ fontWeight:900 }}>K-Click Booth</span></p>
           <p style={{ margin:0, fontSize:11, color:"#be185d", display:"flex", alignItems:"center", gap:4, fontWeight:500 }}>
             Built with <span style={{ display:"inline-block", animation:"heartbeat 1.8s ease-in-out infinite",
