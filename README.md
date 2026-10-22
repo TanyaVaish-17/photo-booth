@@ -66,19 +66,19 @@ photo-booth/
 
 ### 🏠 Home Page
 
-![Home](frontend/public/screenshots/home.png)
+![Home](screenshots/home.png)
 
 ### 📸 Booth Page
 
-![Booth](frontend/public/screenshots/booth.png)
+![Booth](screenshots/booth.png)
 
 ### 🖼️ Result Page
 
-![Result](frontend/public/screenshots/result.png)
+![Result](screenshots/result.png)
 
 ### 💖 Memories Page
 
-![Memories](frontend/public/screenshots/memories.png)
+![Memories](screenshots/memories.png)
 
 ---
 
