@@ -1,72 +1,53 @@
 import { useState } from "react";
-import {
-  collection, addDoc, getDocs, deleteDoc,
-  doc, query, where, serverTimestamp,
-} from "firebase/firestore";
-import { db } from "../firebase/config";
-import { supabase } from "../supabase/config";
 import { useAuth } from "../context/AuthContext";
 
-// Storage bucket name — create this in your Supabase dashboard
-const BUCKET = "memories";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 // Convert a data URL → Blob for clean binary upload
 function dataUrlToBlob(dataUrl) {
   const [header, base64] = dataUrl.split(",");
-  const mime   = header.match(/:(.*?);/)[1];
+  const mime = header.match(/:(.*?);/)[1];
   const binary = atob(base64);
-  const arr    = new Uint8Array(binary.length);
+  const arr = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i);
   return new Blob([arr], { type: mime });
 }
 
+// Sends a request to our backend with the user's Firebase login token
+async function apiRequest(user, path, options = {}) {
+  const token = await user.getIdToken();
+  const res = await fetch(`${API_URL}/api/memories${path}`, {
+    ...options,
+    headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` },
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
+  return body;
+}
+
 export function useMemories() {
   const { user } = useAuth();
-  const [saving,  setSaving]  = useState(false);
+  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState(null);
+  const [error, setError] = useState(null);
 
-  // ── Save ──────────────────────────────────────────────────────────────────
-  // Uploads the composited strip PNG to Supabase Storage,
-  // then writes metadata (imageURL, layout, filter…) to Firestore.
+  // ── Save ──────────────────────────────────────────────────────────────
   const saveMemory = async ({ imageDataUrl, layout, frame, filter, stickers, title }) => {
     if (!user) throw new Error("Must be logged in to save memories");
     setSaving(true);
     setError(null);
 
     try {
-      // 1. Upload image blob to Supabase Storage
-      const blob     = dataUrlToBlob(imageDataUrl);
-      const filePath = `${user.uid}/${Date.now()}.png`;
+      const form = new FormData();
+      form.append("image", dataUrlToBlob(imageDataUrl), "strip.png");
+      form.append("title", title || "My Memory");
+      if (layout) form.append("layout", layout);
+      if (frame) form.append("frame", frame);
+      if (filter) form.append("filter", filter);
+      form.append("stickers", JSON.stringify(stickers || []));
 
-      const { error: uploadError } = await supabase.storage
-        .from(BUCKET)
-        .upload(filePath, blob, { contentType: "image/png", upsert: false });
-
-      if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
-
-      // 2. Get the public URL of the uploaded image
-      const { data: urlData } = supabase.storage
-        .from(BUCKET)
-        .getPublicUrl(filePath);
-
-      const imageURL = urlData?.publicUrl;
-      if (!imageURL) throw new Error("Could not get public URL from Supabase");
-
-      // 3. Write metadata to Firestore
-      await addDoc(collection(db, "memories"), {
-        uid:         user.uid,
-        imageURL,
-        storagePath: filePath,
-        title:       title    || "My Memory",
-        layout:      layout   || null,
-        frame:       frame    || null,
-        filter:      filter   || null,
-        stickers:    stickers || [],
-        createdAt:   serverTimestamp(),
-      });
-
-      return imageURL;
+      const memory = await apiRequest(user, "", { method: "POST", body: form });
+      return memory.imageURL;
     } catch (err) {
       console.error("[useMemories] saveMemory failed:", err);
       setError(err.message);
@@ -76,28 +57,13 @@ export function useMemories() {
     }
   };
 
+  // ── List ──────────────────────────────────────────────────────────────
   const fetchMemories = async () => {
     if (!user) return [];
     setLoading(true);
     setError(null);
     try {
-      // Simple query with no orderBy — avoids needing a composite Firestore index.
-      // We sort by createdAt descending in JS after fetching.
-      const q    = query(
-        collection(db, "memories"),
-        where("uid", "==", user.uid)
-      );
-      const snap = await getDocs(q);
-      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-
-      // Sort newest first in JS
-      docs.sort((a, b) => {
-        const aTime = a.createdAt?.toMillis?.() ?? 0;
-        const bTime = b.createdAt?.toMillis?.() ?? 0;
-        return bTime - aTime;
-      });
-
-      return docs;
+      return await apiRequest(user, "");
     } catch (err) {
       console.error("[fetchMemories] error:", err);
       setError(err.message);
@@ -107,18 +73,11 @@ export function useMemories() {
     }
   };
 
-  // ── Delete ────────────────────────────────────────────────────────────────
-  // Removes the Firestore doc first, then deletes from Supabase Storage.
-  const deleteMemory = async (memoryId, storagePath) => {
+  // ── Delete ────────────────────────────────────────────────────────────
+  const deleteMemory = async (memoryId) => {
     setError(null);
     try {
-      await deleteDoc(doc(db, "memories", memoryId));
-      if (storagePath) {
-        const { error: delError } = await supabase.storage
-          .from(BUCKET)
-          .remove([storagePath]);
-        if (delError) console.warn("[useMemories] Storage delete failed:", delError.message);
-      }
+      await apiRequest(user, `/${memoryId}`, { method: "DELETE" });
     } catch (err) {
       setError(err.message);
       throw err;

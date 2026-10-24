@@ -28,9 +28,9 @@ export default function MemoriesPage() {
   };
 
   const fmt = (mem) =>
-    mem.createdAt?.toDate
-      ? mem.createdAt.toDate().toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" })
-      : "Just now";
+  mem.createdAt
+    ? new Date(mem.createdAt).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" })
+    : "Just now";
 
   if (!user) {
     return (
